@@ -1,9 +1,0 @@
-<resources>
-    <string name="app_name">PrinterLeaks</string>
-    <string name="hp_photo_d110_blank">HP Photosmart D110 Blank</string>
-    <string name="hp_photo_d110_text">HP Photosmart D110 Text</string>
-    <string name="epson_l415_blank">Epson L415 Blank</string>
-    <string name="epson_l415_text">Epson L415 Text</string>
-    <string name="canon_mg2410_blank">Canon MG2410 Blank</string>
-    <string name="canon_mg2410_text">Canon MG2410 Text</string>
-</resources>

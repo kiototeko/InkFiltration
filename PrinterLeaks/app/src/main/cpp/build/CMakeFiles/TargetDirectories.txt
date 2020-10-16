@@ -1,3 +1,0 @@
-/home/kiototeko/tareas/masterThesis/PrinterLeaks/app/src/main/cpp/build/CMakeFiles/rebuild_cache.dir
-/home/kiototeko/tareas/masterThesis/PrinterLeaks/app/src/main/cpp/build/CMakeFiles/edit_cache.dir
-/home/kiototeko/tareas/masterThesis/PrinterLeaks/app/src/main/cpp/build/CMakeFiles/native-lib.dir
