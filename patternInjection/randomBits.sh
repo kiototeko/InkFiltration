@@ -11,7 +11,7 @@ fi
 
 LOAD=""
 TEXT=""
-FILE_IN="simpleLayoutBlank.pdf"
+FILE_IN="Layouts/simpleLayoutBlank.pdf"
 
 
 ARGUMENTS=(${@: -3})
@@ -37,7 +37,7 @@ PRINTER=${ARGUMENTS[1]}
 FILE_BITS="$PRINTER$NUM_BITS$NUM_PAGES${TEXT}_bits"
 PEEPDF="peepdf/peepdf.py"
 
-cp whitePDF.pdf.old whitePDF.pdf
+cp Layouts/whitePDF.pdf.old Layouts/whitePDF.pdf
 
 if [ -n "$TEXT" ]; then
 	AKA=$($PEEPDF -C 'search "/Type /Page"'  $FILE_IN | cut -f1 -d$'\x1b')
@@ -46,19 +46,19 @@ if [ -n "$TEXT" ]; then
 	AKA=$($PEEPDF -C 'search "/Type /Pages"'  $FILE_IN | cut -f1 -d$'\x1b')
 	AKA2=$(echo -n $AKA | tr -d '[]')
 	array=( ${array[@]/$AKA2} )
-	pdftk $FILE_IN cat 1 output whitePDF.pdf
+	pdftk $FILE_IN cat 1 output Layouts/whitePDF.pdf
 
 fi
 
 #if [ -n "$LOAD" ]; then
 
-AKA=$($PEEPDF -C 'search "/Type /Page"'  whitePDF.pdf | cut -f1 -d$'\x1b')
+AKA=$($PEEPDF -C 'search "/Type /Page"'  Layouts/whitePDF.pdf | cut -f1 -d$'\x1b')
 AKA2=$(echo -n $AKA | tr -d '[]')
 IFS=', ' read -r -a array2 <<< $AKA2
-AKA=$($PEEPDF -C 'search "/Type /Pages"'  whitePDF.pdf | cut -f1 -d$'\x1b')
+AKA=$($PEEPDF -C 'search "/Type /Pages"'  Layouts/whitePDF.pdf | cut -f1 -d$'\x1b')
 AKA2=$(echo -n $AKA | tr -d '[]')
 array2=( ${array2[@]/$AKA2} )
-AKA3=$($PEEPDF -C "object ${array2[0]}" whitePDF.pdf | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
+AKA3=$($PEEPDF -C "object ${array2[0]}" Layouts/whitePDF.pdf | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
 echo -e "modify stream $AKA3 randomStream\nsave" > randomScript
 
 #fi
@@ -106,18 +106,18 @@ do
 
 	fi		
 
-	$PEEPDF -s randomScript whitePDF.pdf > log
+	$PEEPDF -s randomScript Layouts/whitePDF.pdf > log
 
 
 
 	if [ $j -eq 1 ]; then
-		cp whitePDF.pdf testPDF.pdf
+		cp Layouts/whitePDF.pdf testPDF.pdf
 		if [ -z "$LOAD" ]; then
 			echo -n $FINAL > $FILE_BITS
 		fi
 
 	else
-		pdfunite testPDF.pdf whitePDF.pdf tmpPDF.pdf
+		pdfunite testPDF.pdf Layouts/whitePDF.pdf tmpPDF.pdf
 		mv tmpPDF.pdf testPDF.pdf
 		if [ -z "$LOAD" ]; then
 			echo -n $FINAL >> $FILE_BITS
