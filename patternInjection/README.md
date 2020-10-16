@@ -4,4 +4,4 @@
 * **intercalate.sh** is used to intercalate pages of the document with the two distinct modulations
 * **genericPattern.py** is used to map bits to the specific injection patterns
 * **filter.sh** is an example of a malicious filter
-
+* **Layouts** is the directory with all the different layouts used
