@@ -4,6 +4,8 @@ import android.util.Log;
 import android.util.Pair;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,6 +22,7 @@ abstract public class processSignal {
     final int Fs = 44100;
 
     public native double[] getPeaksB(double[] a, double minH, int window, int printer, int peakdis);
+
     public native double[] getPeaksPre(double[] a, double[] sample, int window, int minH);
 
     static protected class printerParameters {
@@ -28,7 +31,7 @@ abstract public class processSignal {
         public double szbits, hi_limit, prelimit, limitI;
     }
 
-    processSignal(int type, int printer, File audioFile, InputStream fileSample){
+    processSignal(int type, int printer, File audioFile, InputStream fileSample) {
         this.audioFile = audioFile;
         this.printer = printer;
         this.type = type;
@@ -39,12 +42,12 @@ abstract public class processSignal {
     protected abstract Pair<List<Integer>, List<Integer>> peaks2bits(List<Double> peaks_pre, List<Double> peaks);
 
 
-    public int getPayloadSize(){
-        return (int) parameter.szbits-1;
+    public int getPayloadSize() {
+        return (int) parameter.szbits - 1;
     }
 
     public void setParameter(double limitH1, double limitH2, double limitL1, double limitL2,
-                             int preminH, double prelimit, double minH, double szbits, int peakdis, int env_window, double hi_limit){
+                             int preminH, double prelimit, double minH, double szbits, int peakdis, int env_window, double hi_limit) {
         parameter.limitH1 = limitH1;
         parameter.limitH2 = limitH2;
         parameter.limitL1 = limitL1;
@@ -59,7 +62,7 @@ abstract public class processSignal {
     }
 
     public void setParameter(double limitH1, double limitH2, double limitL1, double limitL2, double limitI,
-                             int preminH, double prelimit, double minH, double szbits, int peakdis, int env_window){
+                             int preminH, double prelimit, double minH, double szbits, int peakdis, int env_window) {
         parameter.limitH1 = limitH1;
         parameter.limitH2 = limitH2;
         parameter.limitL1 = limitL1;
@@ -73,71 +76,93 @@ abstract public class processSignal {
         parameter.env_window = env_window;
     }
 
-    public printerParameters getParameter(){
+    public printerParameters getParameter() {
         return parameter;
     }
+
     private double[] readFileCSV() throws IOException {
 
-        /*
-        Scanner sc = new Scanner(new File(filenameSample));
-        final int lineSz = 179;
-        double[] sample = new double[lineSz];
-        sc.useDelimiter(",");
-        for(int i = 0; i < (printer-1)*2 + (type-1); i++) {
-            sc.nextLine();
-        }
-        for(int i = 0; i < lineSz; i++){
-            sample[i] = sc.nextDouble();
-        }
-        sc.close();
-        return sample;
-        */
 
         final int lineSz = 179;
         double[] sample = new double[lineSz];
         String eachline = "";
 
-        BufferedReader bufferedReader= new BufferedReader(new InputStreamReader(fileSample));
-        for(int i = 0; i <= (printer-1)*2 + (type-1); i++) {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileSample));
+        for (int i = 0; i <= (printer - 1) * 2 + (type - 1); i++) {
             eachline = bufferedReader.readLine();
         }
         String[] words = eachline.split(",");
 
-        for(int i = 0; i < lineSz; i++){
+        for (int i = 0; i < lineSz; i++) {
             sample[i] = Double.parseDouble(words[i]);
         }
 
         return sample;
     }
 
-    private List<Double> obtainPeaks(boolean pre) throws IOException,WavFileException {
+    private int timesCharacter(String s, char c){
+        int positionOfLetter = s.indexOf(c);
+        int countNumberOfLetters = 0;
 
-        WavFile wav = WavFile.openWavFile(audioFile);
-        //int Fs = (int) wav.getSampleRate();
+        while (positionOfLetter != -1) {
+            countNumberOfLetters++;
+            positionOfLetter = s.indexOf(c, positionOfLetter + 1);
+        }
+        return countNumberOfLetters;
+    }
+
+    private void getFloats(double[] fl, byte[] chunk, int sz){
+        //double[] fl = new double[(int)sz/2];
+
+        for(int i = 0; i < sz; i += 2) {
+            double f;
+            short pcm = (short)(((chunk[i+1] & 0xFF) << 8) | (chunk[i] & 0xFF));
+            f = ((double) pcm) / (double) 32768.0;
+            if (f > 1) f = 1;
+            if (f < -1) f = -1;
+            fl[(int) i/2] = f;
+
+        }
+
+    }
+
+    private List<Double> obtainPeaks(boolean pre) throws IOException {
+
+        FileInputStream in = new FileInputStream(audioFile);
+        int numFrames = (int) audioFile.length()/2;
         int overlap = 10000 + 10000 * 11*(pre? 1:0);
         int window = Fs + Fs*11*(pre? 1:0);
-        int num = (int)Math.ceil(((double)wav.getNumFrames())/((double)(window-overlap)));
+        int remaining_sz = numFrames, bytesObtained = 0;
+        int num = (int)Math.ceil(((double)numFrames)/((double)(window-overlap)));
         List<Double> peaks = new ArrayList<>();
         double[] remnant = new double[window], frames_temp = new double[window-overlap];
         double[] locs, sample_variable = new double[1];
+        byte[] remnantRaw = new byte[window*2];
 
         if(pre)
              sample_variable = readFileCSV();
 
         for(int n = 0; n < num; n++) {
 
-            int remaining_sz = (int)wav.getFramesRemaining();
+
+            remaining_sz -= bytesObtained;
             if(n == 0) {
-                wav.readFrames(remnant, window);
+                in.read(remnantRaw, 0, window*2);
+                getFloats(remnant, remnantRaw, window*2);
+                bytesObtained = window-overlap;
             }
             else {
                 System.arraycopy(remnant, remnant.length - overlap, remnant, 0, overlap);
 
                 if (window-overlap > remaining_sz) {
-                    wav.readFrames(frames_temp, remaining_sz);
+                    in.read(remnantRaw, 0, remaining_sz*2);
+                    getFloats(frames_temp, remnantRaw, remaining_sz*2);
                     System.arraycopy(frames_temp, 0, remnant, overlap, remaining_sz);
                 } else {
-                    wav.readFrames(frames_temp, window - overlap);
+                      bytesObtained = window-overlap;
+                    in.read(remnantRaw, 0, bytesObtained*2);
+                    getFloats(frames_temp, remnantRaw, bytesObtained*2);
+
                     System.arraycopy(frames_temp, 0, remnant, overlap, window - overlap);
                 }
             }
@@ -152,7 +177,7 @@ abstract public class processSignal {
 
             for(double loc: locs) {
                 if(loc < 1 || loc > 100000)
-                        continue;
+                        break;
 
                 loc += n * (window - overlap) / 1000.0;
 
@@ -169,6 +194,7 @@ abstract public class processSignal {
             }
 
         }
+        in.close();
         return peaks;
     }
 
@@ -227,21 +253,19 @@ abstract public class processSignal {
         List<Integer> bits = new ArrayList<>();
         String bitsS = "";
         try {
-            Log.i("dd", "hello-1");
             List<Double> peaks_pre = obtainPeaks(true);
-            Log.i("dd", "hello0 " + Integer.toString(peaks_pre.size()));
+            Log.i("Process", "Output obtainPeaksPre " + Integer.toString(peaks_pre.size()));
             List<Double> peaks = obtainPeaks(false);
-            Log.i("dd", "hello " + Integer.toString(peaks.size()));
+            Log.i("Process", "Output obtainPeaks " + Integer.toString(peaks.size()));
             Pair<List<Integer>, List<Integer>> res = peaks2bits(peaks_pre, peaks);
 
             String ress = "";
             for(int i : res.first){
                 ress += Integer.toString(i);
             }
-            Log.i("dd", "hello2 " + res.first);
-            Log.i("dd", "hello2 " + ress);
+            Log.i("Process", "Output peaks2bits " + ress);
             bits = bits2packets(res.first, res.second);
-            Log.i("dd", "hello4");
+            Log.i("Process", "End");
         }catch(Exception d){
             Log.i("processSignal", d.getMessage());
         }
@@ -249,7 +273,6 @@ abstract public class processSignal {
         for(int i : bits){
             bitsS += Integer.toString(i);
         }
-        Log.i("dd", "aqui: " + bitsS);
         return bitsS;
     }
 }

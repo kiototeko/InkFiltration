@@ -9,31 +9,7 @@
 #define SIZE 20
 #define SIZE2 100
 
-/*
-extern "C" JNIEXPORT jdoubleArray JNICALL Java_com_ucla_printerleaks_MainActivity_getPeaksA(
-        JNIEnv* env,
-        jobject thiz,
-        jdoubleArray a, jdouble minH)
-{
-    int sz = SIZE;
-    jdouble temp[SIZE];
 
-    jdouble* ac = env->GetDoubleArrayElements(a, NULL);
-    jdoubleArray result = env->NewDoubleArray(SIZE);
-    memset(temp, 0, SIZE);
-
-
-    if(result != NULL){
-        getPeaks_initialize();
-        getPeaks(ac, minH, temp, &sz);
-        env->SetDoubleArrayRegion(result, 0, SIZE, temp);
-    }
-    env->ReleaseDoubleArrayElements(a,ac,0);
-    getPeaks_terminate();
-
-    return result;
-}
-*/
 extern "C" JNIEXPORT jdoubleArray JNICALL Java_com_ucla_printerleaks_processSignal_getPeaksB(
         JNIEnv* env,
         jobject thiz,

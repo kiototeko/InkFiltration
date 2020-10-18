@@ -6,26 +6,37 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.math.MathUtils;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Date;
 import java.util.concurrent.*;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.icu.util.Calendar;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
+import android.media.AudioTrack;
 import android.media.MediaCodec;
+import android.media.MediaCodecList;
+import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -61,19 +72,18 @@ public class MainActivity extends AppCompatActivity {
     final int STORAGE_REQUEST_CODE = 101;
     final int RECORD_REQUEST_CODE = 102;
     final int WRITE_REQUEST_CODE = 103;
-    final int SAMPLE_SZ = 44100;
     static int num_lo = 0, num_hi = 0, res = 0;
     File filename;
 
     private final static int MESSAGE_UPDATE_TEXT_CHILD_THREAD =1;
-    final String PREAMBLE = "1010";
     Boolean inUse = FALSE, stopRecording = FALSE;
     TextView tv, pay, recording;
     File audioFile;
-    AudioRecord adr;
     String payload;
     int payload_sz;
     Spinner spinn;
+    MediaCodec mDecoder;
+    MediaExtractor extractor;
 
     MediaRecorder recorder;
     private Handler updateUIHandler = null;
@@ -115,21 +125,38 @@ public class MainActivity extends AppCompatActivity {
         pay = findViewById(R.id.payload_text);
         recording = findViewById(R.id.recording_status);
 
-        Log.i("jkljk", Integer.toString(AudioRecord.getMinBufferSize(SAMPLE_SZ,AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)));
     }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    //public native double[] getPeaksA(double[] a, double minH);
+
 
     public void recordAudio(View view){
         if(! inUse) {
-            filename = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC).toString() + '/' + "temp");
+            Calendar c1 = Calendar.getInstance();
+            Date dateOne = c1.getTime();
+            filename = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC).toString() + '/' + "temp" + Long.toString(dateOne.getTime()) + ".m4a");
+
             Log.i("external", getExternalFilesDir(null).toString());
+
+            int android_os = android.os.Build.VERSION.SDK_INT;
+
+            if(android_os >= 26) {
+                recorder = new MediaRecorder();
+                recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                recorder.setOutputFile(filename);
+                recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                recorder.setAudioSamplingRate(44100);
+                recorder.setAudioEncodingBitRate(128000);
+            }
+            else {
+                Log.i("android", Integer.toString(android_os));
+                Toast.makeText(this, "API version should be >= 26", Toast.LENGTH_LONG);
+                return;
+            }
+
             inUse = TRUE;
             stopRecording = FALSE;
+            tv.setText("");
             pay.setText("Recording");
             ExecutorService es = Executors.newFixedThreadPool(1);
             es.execute(new ProcessAudio(ProcessAudio.RECORD_PROCESS, spinn.getSelectedItemPosition()));
@@ -137,119 +164,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void stopRecording(View view){
-        stopRecording = TRUE;
         pay.setText("Processing");
-        /*
         recorder.stop();
+        recorder.reset();
         recorder.release();
         recorder = null;
-        */
+        stopRecording = TRUE;
+
     }
 
     public void openFile(View view){
         if(! inUse) {
             inUse = TRUE;
+
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("audio/x-wav");
+            //intent.setType("audio/x-wav");
+            //intent.setType("audio/mp4a-latm");
+            intent.setType("audio/mpeg");
             startActivityForResult(intent, OPEN_REQUEST_CODE);
         }
     }
 
 
-    public void recordProcessAudioOld(final int printer){
-        int android_os = android.os.Build.VERSION.SDK_INT;
-        if(android_os >= 26) {
-            recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            recorder.setOutputFile(filename);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.setAudioSamplingRate(44100);
-            recorder.setAudioEncodingBitRate(128000);
 
-            try {
-                recorder.prepare();
-            } catch (IOException e) {
-                Log.e("media", "prepare() failed");
-            }
-
-            recorder.start();
-        }
-        while(! stopRecording);
-
-        fileProcessAudio(printer);
-
-    }
     public void recordProcessAudio(final int printer){
-        FileOutputStream wavOut = null;
-        AudioRecord adr = null;
-        long startTime = 0;
-        long endTime = 0;
-        final int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_SZ,AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-
-        adr = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_SZ, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, BUFFER_SIZE*4);
-        try {
-            wavOut = new FileOutputStream(filename);
-            writeWavHeader(wavOut, AudioFormat.CHANNEL_IN_MONO, SAMPLE_SZ, AudioFormat.ENCODING_PCM_16BIT);
-            // Avoiding loop allocations
-            byte[] buffer = new byte[BUFFER_SIZE];
-            boolean run = true;
-            int read;
-            long total = 0;
-
-            // Let's go
-            startTime = SystemClock.elapsedRealtime();
-            adr.startRecording();
-            while (! stopRecording) {
-                read = adr.read(buffer, 0, buffer.length);
-
-                // WAVs cannot be > 4 GB due to the use of 32 bit unsigned integers.
-                if (total + read > 4294967295L) {
-                    // Write as many bytes as we can before hitting the max size
-                    for (int i = 0; i < read && total <= 4294967295L; i++, total++) {
-                        wavOut.write(buffer[i]);
-                    }
-                    run = false;
-                } else {
-                    // Write out the entire read buffer
-                    wavOut.write(buffer, 0, read);
-                    total += read;
-                }
-            }
-        } catch (IOException ex) {
-            Log.i("Record", ex.getMessage());
-        } finally {
-            if (adr != null) {
-                try {
-                    if (adr.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-                        adr.stop();
-                        endTime = SystemClock.elapsedRealtime();
-                    }
-                } catch (IllegalStateException ex) {
-                    //
-                }
-                if (adr.getState() == AudioRecord.STATE_INITIALIZED) {
-                    adr.release();
-                }
-            }
-            if (wavOut != null) {
-                try {
-                    wavOut.close();
-                } catch (IOException ex) {
-                    //
-                }
-            }
-        }
 
         try {
-            // This is not put in the try/catch/finally above since it needs to run
-            // after we close the FileOutputStream
-            updateWavHeader(filename);
-        } catch(Exception e){
-            Log.i("Record", e.getMessage());
+            recorder.prepare();
+        } catch (IOException e) {
+            Log.e("media", "prepare() failed");
         }
+
+        recorder.start();
+
+        while(! stopRecording);
 
         audioFile = filename;
         fileProcessAudio(printer);
@@ -262,21 +211,38 @@ public class MainActivity extends AppCompatActivity {
 
         processSignal proc;
 
-        //classification clas = new classification(this);
-        //printer = Integer.parseInt(clas.classifyNoise(audioFile));
 
-        //Log.i("printer", Integer.toString(printer));
+        //
+        File f = audioFile;
+        try {
+            f = File.createTempFile("tmp", null, this.getCacheDir());
+
+            extractor = new MediaExtractor();
+            extractor.setDataSource(audioFile.getAbsolutePath());
+            int tracs = extractor.getTrackCount();
+            extractor.selectTrack(0);
+            MediaFormat format = extractor.getTrackFormat(0);
+            format.setInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormat.ENCODING_PCM_FLOAT);
+            String mime = format.getString(MediaFormat.KEY_MIME);
+            mDecoder = MediaCodec.createDecoderByType("audio/mp4a-latm");
+            mDecoder.configure(format, null, null, 0);
+            mDecoder.start();
 
 
+            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+            readData(info, f);
 
-
+        } catch(Exception e){
+            Log.i("mediaCodec", "media");
+        }
+//
         int printer2 = (int) Math.floor(printer/2.0)+1;
         int type = (int) printer % 2 + 1;
         InputStream databaseInputStream = getResources().openRawResource(R.raw.samples);
         if(type == 1)
-            proc = new processSignalBlank(printer2, audioFile, databaseInputStream);
+            proc = new processSignalBlank(printer2, f, databaseInputStream);
         else
-            proc = new processSignalText(printer2, audioFile, databaseInputStream);
+            proc = new processSignalText(printer2, f, databaseInputStream);
 
         payload = proc.process();
         payload_sz = proc.getPayloadSize();
@@ -291,6 +257,81 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //https://github.com/taehwandev/MediaCodecExample/blob/master/src/net/thdev/mediacodecexample/decoder/AudioDecoderThread.java
+    //https://gist.github.com/a-m-s/1991ab18fbcb0fcc2cf9
+    public ByteBuffer readData( MediaCodec.BufferInfo info, File file) throws IOException{
+        boolean end_of_input_file = false;
+        //BufferedWriter out = new BufferedWriter(new FileWriter(file));
+        FileOutputStream out = new FileOutputStream(file);
+
+
+        if (mDecoder == null)
+            return null;
+
+        while (!end_of_input_file) {
+            // Read data from the file into the codec.
+
+            int inputBufferIndex = mDecoder.dequeueInputBuffer(1000);
+            if (inputBufferIndex >= 0) {
+                ByteBuffer inputBuffer = mDecoder.getInputBuffer(inputBufferIndex);
+
+                int size = extractor.readSampleData(inputBuffer, 0);
+                if (size < 0) {
+                    // End Of File
+                    mDecoder.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                    end_of_input_file = true;
+                } else {
+                    mDecoder.queueInputBuffer(inputBufferIndex, 0, size, extractor.getSampleTime(), 0);
+                    extractor.advance();
+                }
+            }
+
+
+
+
+            int outputBufferIndex = mDecoder.dequeueOutputBuffer(info, 1000);
+            switch (outputBufferIndex) {
+                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                    MediaFormat format = mDecoder.getOutputFormat();
+
+                    break;
+                case MediaCodec.INFO_TRY_AGAIN_LATER:
+                    break;
+
+                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                    break;
+
+                default:
+                    ByteBuffer outBuffer = mDecoder.getOutputBuffer(outputBufferIndex);
+                    MediaFormat bufferFormat = mDecoder.getOutputFormat(outputBufferIndex);
+
+                    final byte[] chunk = new byte[info.size-info.offset];
+                    //int a = outBuffer.position();
+                    outBuffer.get(chunk); // Read the buffer all at once
+                    outBuffer.clear(); // ** MUST DO!!! OTHERWISE THE NEXT TIME YOU GET THIS SAME BUFFER BAD THINGS WILL HAPPEN
+                    out.write(chunk, 0, info.size - info.offset);
+
+                    mDecoder.releaseOutputBuffer(outputBufferIndex, false);
+                    break;
+            }
+
+            // All decoded frames have been rendered, we can stop playing now
+            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                break;
+            }
+        }
+        mDecoder.stop();
+        mDecoder.release();
+        mDecoder = null;
+
+        extractor.release();
+        extractor= null;
+
+        out.close();
+        return null;
+
+    }
 
 
 
@@ -301,8 +342,8 @@ public class MainActivity extends AppCompatActivity {
         if(resultCode == Activity.RESULT_OK){
             if(requestCode == OPEN_REQUEST_CODE){
                 if(resultData != null){
-                    tv.setText("Processing...");
-                    pay.setText("");
+                    tv.setText("");
+                    pay.setText("Processing...");
                     String[] path = resultData.getData().getPath().split(":");
                     audioFile = new File("/storage/self/primary/" + path[1]);
                     //tv.setText(audioFile.toString());
@@ -387,121 +428,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static void writeWavHeader(OutputStream out, int channelMask, int sampleRate, int encoding) throws IOException {
-        short channels;
-        switch (channelMask) {
-            case AudioFormat.CHANNEL_IN_MONO:
-                channels = 1;
-                break;
-            case AudioFormat.CHANNEL_IN_STEREO:
-                channels = 2;
-                break;
-            default:
-                throw new IllegalArgumentException("Unacceptable channel mask");
-        }
 
-        short bitDepth;
-        switch (encoding) {
-            case AudioFormat.ENCODING_PCM_8BIT:
-                bitDepth = 8;
-                break;
-            case AudioFormat.ENCODING_PCM_16BIT:
-                bitDepth = 16;
-                break;
-            case AudioFormat.ENCODING_PCM_FLOAT:
-                bitDepth = 32;
-                break;
-            default:
-                throw new IllegalArgumentException("Unacceptable encoding");
-        }
 
-        writeWavHeader(out, channels, sampleRate, bitDepth);
-    }
-
-    /**
-     * Writes the proper 44-byte RIFF/WAVE header to/for the given stream
-     * Two size fields are left empty/null since we do not yet know the final stream size
-     *
-     * @param out        The stream to write the header to
-     * @param channels   The number of channels
-     * @param sampleRate The sample rate in hertz
-     * @param bitDepth   The bit depth
-     * @throws IOException
-     */
-    private static void writeWavHeader(OutputStream out, short channels, int sampleRate, short bitDepth) throws IOException {
-        // Convert the multi-byte integers to raw bytes in little endian format as required by the spec
-        byte[] littleBytes = ByteBuffer
-                .allocate(14)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(channels)
-                .putInt(sampleRate)
-                .putInt(sampleRate * channels * (bitDepth / 8))
-                .putShort((short) (channels * (bitDepth / 8)))
-                .putShort(bitDepth)
-                .array();
-
-        // Not necessarily the best, but it's very easy to visualize this way
-        out.write(new byte[]{
-                // RIFF header
-                'R', 'I', 'F', 'F', // ChunkID
-                0, 0, 0, 0, // ChunkSize (must be updated later)
-                'W', 'A', 'V', 'E', // Format
-                // fmt subchunk
-                'f', 'm', 't', ' ', // Subchunk1ID
-                16, 0, 0, 0, // Subchunk1Size
-                1, 0, // AudioFormat
-                littleBytes[0], littleBytes[1], // NumChannels
-                littleBytes[2], littleBytes[3], littleBytes[4], littleBytes[5], // SampleRate
-                littleBytes[6], littleBytes[7], littleBytes[8], littleBytes[9], // ByteRate
-                littleBytes[10], littleBytes[11], // BlockAlign
-                littleBytes[12], littleBytes[13], // BitsPerSample
-                // data subchunk
-                'd', 'a', 't', 'a', // Subchunk2ID
-                0, 0, 0, 0, // Subchunk2Size (must be updated later)
-        });
-    }
-
-    /**
-     * Updates the given wav file's header to include the final chunk sizes
-     *
-     * @param wav The wav file to update
-     * @throws IOException
-     */
-    private static void updateWavHeader(File wav) throws IOException {
-        byte[] sizes = ByteBuffer
-                .allocate(8)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                // There are probably a bunch of different/better ways to calculate
-                // these two given your circumstances. Cast should be safe since if the WAV is
-                // > 4 GB we've already made a terrible mistake.
-                .putInt((int) (wav.length() - 8)) // ChunkSize
-                .putInt((int) (wav.length() - 44)) // Subchunk2Size
-                .array();
-
-        RandomAccessFile accessWave = null;
-        //noinspection CaughtExceptionImmediatelyRethrown
-        try {
-            accessWave = new RandomAccessFile(wav, "rw");
-            // ChunkSize
-            accessWave.seek(4);
-            accessWave.write(sizes, 0, 4);
-
-            // Subchunk2Size
-            accessWave.seek(40);
-            accessWave.write(sizes, 4, 4);
-        } catch (IOException ex) {
-            // Rethrow but we still close accessWave in our finally
-            throw ex;
-        } finally {
-            if (accessWave != null) {
-                try {
-                    accessWave.close();
-                } catch (IOException ex) {
-                    //
-                }
-            }
-        }
-    }
 
 
 }
