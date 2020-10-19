@@ -14,11 +14,12 @@ preamble = [1,0,1,0]
 text = False
 sweep = False
 sweep2 = False
+infoF = False
 printer = sys.argv[-1]
 
 
 
-opts, args = getopt.getopt(sys.argv[1:], "T:p:tsS")
+opts, args = getopt.getopt(sys.argv[1:], "T:p:tsSi")
 for opt, arg in opts:
 	if opt == '-T':
 		total = int(arg)
@@ -30,10 +31,30 @@ for opt, arg in opts:
 		sweep = True
 	elif opt == '-S':
 		sweep2 = True
-	
+	elif opt == '-i':
+		infoF = True
 
 
+def info():
+	if(printer == "HP"):
+		if(text):
+			return 10
+		else:
+			return 25
+	elif(printer == "Epson"):
+		if(text):
+			return 7
+		else:
+			return 27
+	elif(printer == "Canon"):
+		if(text):
+			return 6
+		else:
+			return 20
 	
+if(infoF):
+	print(info())
+	exit()
 
 def HP_text():
 	partitions = 10

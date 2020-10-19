@@ -20,9 +20,18 @@ cat - > $FILE_IN
 
 GRAY=$(echo $5 | grep "Gray")
 
+TEXT=""
+
+TMP=$(lpstat -e | tr "\n" ",")
+IFS=',' read -r -a PRINTERS <<< $TMP
 
 
 
+PRINTER_SEARCH=$(lpstat -W "not-completed" -o | cut -d " " -f 1 |  sed 's/\-[0-9]*$//' )
+
+PRINTER=$(echo $PRINTER_SEARCH | sed 's/EPSON_L4150_Series/Epson/; s/MG2400-series/Canon/; s/Photosmart-D110-series/HP/')
+
+echo "$PRINTER" >> /tmp/log
 
 PEEPDF="/tmp/peepdf/peepdf.py"
 FORMAT_DATA="/tmp/genericPattern.py"
@@ -33,7 +42,6 @@ AKA2=$(echo -n $AKA | tr '[]' ' ')
 IFS=', ' read -r -a array <<< $AKA2
 TMP_FILE="/tmp/tmp"
 TMP_PEEP="/tmp/peep"
-NUM_BYTES=10
 RGB_PATTERN="[0-9].*\s[0-9].*\s[0-9].*\s"
 
 for i in "${array[@]}"
@@ -44,6 +52,11 @@ do
         fi
 	STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
 	STREAM2=""
+	
+	AKA4=$(echo $STREAM | grep -wE 'BI|ID|\sDo\s*$' )
+        if [ -n "$AKA4" ]; then
+                continue
+        fi
 
 	if [ -n "$GRAY" ]; then
         	while IFS= read -r line
@@ -66,17 +79,32 @@ do
 		STREAM2=$STREAM
 	fi
 
-        AKA4=$(echo $STREAM | grep -E '^BI|^ID|\sDo\s*$' )
+        AKA4=$(echo $STREAM2 | grep -wE 'BT|ET' )
         if [ -n "$AKA4" ]; then
-                continue
+                TEXT="y"
+		NUM_BYTES=$($FORMAT_DATA -ti $PRINTER)
+	else
+		NUM_BYTES=$($FORMAT_DATA -i $PRINTER)		
         fi
+        echo "$NUM_BYTES" >> /tmp/log
+        if [ $PRINTER = "Epson" ] || [ $PRINTER = "Canon" ]; then
+		STREAM2=$(echo "$STREAM2" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/')
+	fi
+	
         BYTE_DATA=$(head -c $NUM_BYTES $DATA)
         dd if=$DATA of=$DATA_TMP ibs=$NUM_BYTES skip=1
         mv $DATA_TMP $DATA
-        $FORMAT_DATA -p $BYTE_DATA > $TMP_FILE
-        echo -e $STREAM2  >> $TMP_FILE
+        if [ -n "$TEXT" ]; then
+		$FORMAT_DATA -p $BYTE_DATA -t $PRINTER > $TMP_FILE
+	else
+		$FORMAT_DATA -p $BYTE_DATA $PRINTER > $TMP_FILE #For the Canon printer, the individual blank pages should be printed with the fit-to-page option
+		$FORMAT_DATA -p $BYTE_DATA $PRINTER > /tmp/loco
+	fi
+        echo -e $STREAM2  >> $TMP_FILE	
         echo -e "modify stream $AKA3 $TMP_FILE\nsave" > $TMP_PEEP
         $PEEPDF -s $TMP_PEEP $FILE_IN
+
+	echo $STREAM2 >> /tmp/log
 done
 
 
