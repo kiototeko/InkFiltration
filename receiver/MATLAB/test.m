@@ -204,12 +204,15 @@ text = zeros(3,2);
 for n=classes
     filename = strcat(dir, "C", num2str(n), "BlankNoisePt");
     filename2 = strcat(dir, "C", num2str(n), "TextNoisePt");
-    blank(n,1) = processSignal(strcat(filename, "1.wav"), "Blank");
-    blank(n,2) = processSignal(strcat(filename, "2.wav"), "Blank");
-    text(n,1) = processSignal(strcat(filename2,"1.wav"), "Text");
-    text(n,2) = processSignal(strcat(filename2,"2.wav"), "Text");
+    blank(n,1) = 1-processSignal(strcat(filename, "1.wav"), "Blank");
+    blank(n,2) = 1-processSignal(strcat(filename, "2.wav"), "Blank");
+    text(n,1) = 1-processSignal(strcat(filename2,"1.wav"), "Text");
+    text(n,2) = 1-processSignal(strcat(filename2,"2.wav"), "Text");
     
 end
+
+mean(blank,2)
+mean(text,2)
 
 %% Offset sweep
 
@@ -226,3 +229,13 @@ set(xx, 'fontsize', 12)
 lgd = legend('HP', 'Epson', 'Canon');
 set(lgd, 'fontsize', 12)
 set(gcf, 'Color', 'w');
+
+%% Intercalating Modulation
+
+inter = zeros(3,1);
+for n=classes
+    filename = strcat(dir, "C", num2str(n), "InterPt");
+    inter(n,1) = testInter(strcat(filename, "1.wav"));
+    inter(n,1) = inter(n,1) + testInter(strcat(filename, "2.wav"));
+    inter(n,1) = inter(n,1)/2;
+end

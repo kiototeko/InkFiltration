@@ -127,10 +127,10 @@ def HP_blank():
 
 
 def Canon_blank():
-	sizeL=28.0
+	sizeL=27.0
 	packet_size=25
 	packet = preamble + pattern[0:packet_size-len(preamble)-1]
-	total = 782
+	total = 781
 	
 	parity = 0
 	print("9 %.2f 594 1 re" %(total))
