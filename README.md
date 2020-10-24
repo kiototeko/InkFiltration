@@ -4,6 +4,6 @@ A covert channel can be established by leveraging the acoustic emissions of inkj
 
 The code consists of the follwing:
 
-1. A series of programs used to inject the patterns into documents. These are located in the patternInjection directory.
-1. The receiver code that was implemented both in MATLAB and for and Android smartphone
+1. A series of programs used to inject the patterns into documents. These are located in the **patternInjection** directory.
+1. The **receiver** code that was implemented both in MATLAB and for an Android app.
 
