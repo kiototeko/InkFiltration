@@ -2,6 +2,13 @@ package com.ucla.printerleaks;
 
 import android.util.Log;
 import android.util.Pair;
+
+import com.github.psambit9791.jdsp.filter.Chebyshev;
+import com.github.psambit9791.jdsp.misc.UtilMethods;
+import com.github.psambit9791.jdsp.signal.Decimate;
+import com.github.psambit9791.jdsp.signal.peaks.FindPeak;
+import com.github.psambit9791.jdsp.signal.peaks.Peak;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,6 +18,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
 
 
 abstract public class processSignal {
@@ -126,6 +137,70 @@ abstract public class processSignal {
 
     }
 
+    private double[] getPeaks(double[] y, double minH, int window, int peakdis){
+        Chebyshev cheb = new Chebyshev(y, Fs, 1);
+        double[] yband = cheb.bandPassFilter(6, 3500, 6000, 1);
+        double[] ycentered, xrms = new double[yband.length]; //= new double[yband.length];
+        double mean = 0;
+
+        for(double n: yband)
+            mean += n;
+
+        mean /= yband.length;
+
+        /**
+        for(int i = 0; i < yband.length; i++) {
+            ycentered[i] = yband[i] - mean;
+        }
+         **/
+
+        ycentered = UtilMethods.scalarArithmetic(yband, mean, "sub");
+        double xrms_tmp;
+        for(int n = 0; n < yband.length; n++){
+            xrms_tmp = 0;
+            if(n < window)
+                for (int i = 0; i <= n; i++) {
+                    xrms_tmp += pow(ycentered[i], 2);
+                }
+            else {
+                for (int i = n - window; i < n; i++) {
+                    xrms_tmp += pow(ycentered[i], 2);
+                }
+            }
+            xrms[n] = sqrt(xrms_tmp /= window);
+        }
+
+        double[] yupper = UtilMethods.scalarArithmetic(xrms, mean, "add");
+        double yupper_tmp = 0;
+        for(double n: yupper){
+            yupper_tmp += abs(pow(n,2));
+        }
+        yupper_tmp = sqrt(yupper_tmp/yupper.length);
+        double[] out = UtilMethods.scalarArithmetic(yupper, yupper_tmp, "div");
+
+        Decimate dec = new Decimate(out, Fs);
+        double[] outD = dec.decimate(1000);
+
+        FindPeak fp = new FindPeak(outD);
+        Peak peaks = fp.detectPeaks();
+        int[] peaks_loc = peaks.filterByHeight(minH, "lower");
+
+        int[] peaks_diff = UtilMethods.diff(peaks_loc);
+        double[] peaks_res = new double[peaks_loc.length];
+        int sum = 0;
+        for(int i = 0, idx = 0; i < peaks_diff.length; i++) {
+            sum += peaks_diff[i];
+            if (i == 0 || sum >= peakdis) {
+                peaks_res[idx] = peaks_loc[i];
+                idx++;
+                sum = 0;
+            }
+        }
+
+        return peaks_res;
+
+    }
+
     private List<Double> obtainPeaks(boolean pre) throws IOException {
 
         FileInputStream in = new FileInputStream(audioFile);
@@ -173,7 +248,8 @@ abstract public class processSignal {
 
             }
             else
-                locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
+                //locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
+                locs = getPeaks(remnant, parameter.minH, parameter.env_window, parameter.peakdis);
 
             for(double loc: locs) {
                 if(loc < 1 || loc > 100000)
