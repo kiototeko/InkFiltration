@@ -137,9 +137,10 @@ abstract public class processSignal {
 
     }
 
+    // This function is not actually used, it performs worse than using the matlab function getPeaksB
     private double[] getPeaks(double[] y, double minH, int window, int peakdis){
-        Chebyshev cheb = new Chebyshev(y, Fs, 1);
-        double[] yband = cheb.bandPassFilter(6, 3500, 6000, 1);
+        Chebyshev cheb = new Chebyshev(y, Fs, 0.01, 1);
+        double[] yband = cheb.bandPassFilter(6, 3500, 6000);
         double[] ycentered, xrms = new double[yband.length]; //= new double[yband.length];
         double mean = 0;
 
@@ -158,16 +159,16 @@ abstract public class processSignal {
         double xrms_tmp;
         for(int n = 0; n < yband.length; n++){
             xrms_tmp = 0;
-            if(n < window)
+            if(n < window-1)
                 for (int i = 0; i <= n; i++) {
                     xrms_tmp += pow(ycentered[i], 2);
                 }
             else {
-                for (int i = n - window; i < n; i++) {
+                for (int i = n - window+1; i <= n; i++) {
                     xrms_tmp += pow(ycentered[i], 2);
                 }
             }
-            xrms[n] = sqrt(xrms_tmp /= window);
+            xrms[n] = sqrt(xrms_tmp/window);
         }
 
         double[] yupper = UtilMethods.scalarArithmetic(xrms, mean, "add");
@@ -184,17 +185,28 @@ abstract public class processSignal {
         FindPeak fp = new FindPeak(outD);
         Peak peaks = fp.detectPeaks();
         int[] peaks_loc = peaks.filterByHeight(minH, "lower");
+        double[] peaks_res;
 
-        int[] peaks_diff = UtilMethods.diff(peaks_loc);
-        double[] peaks_res = new double[peaks_loc.length];
-        int sum = 0;
-        for(int i = 0, idx = 0; i < peaks_diff.length; i++) {
-            sum += peaks_diff[i];
-            if (i == 0 || sum >= peakdis) {
-                peaks_res[idx] = peaks_loc[i];
-                idx++;
-                sum = 0;
+        if(peaks_loc.length > 0) {
+            peaks_res = new double[peaks_loc.length];
+            peaks_res[0] = peaks_loc[0];
+
+            if(peaks_loc.length > 1) {
+                int[] peaks_diff = UtilMethods.diff(peaks_loc);
+                int sum = 0;
+                for (int i = 0, idx = 1; i < peaks_diff.length; i++) {
+                    sum += peaks_diff[i];
+                    if (sum >= peakdis) {
+                        peaks_res[idx] = peaks_loc[i+1];
+                        idx++;
+                        sum = 0;
+                    }
+                }
             }
+        }
+        else {
+            peaks_res = new double[1];
+            peaks_res[0] = 0;
         }
 
         return peaks_res;
@@ -248,8 +260,8 @@ abstract public class processSignal {
 
             }
             else
-                //locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
-                locs = getPeaks(remnant, parameter.minH, parameter.env_window, parameter.peakdis);
+                locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
+                //locs = getPeaks(remnant, parameter.minH, parameter.env_window, parameter.peakdis);
 
             for(double loc: locs) {
                 if(loc < 1 || loc > 100000)
@@ -331,7 +343,9 @@ abstract public class processSignal {
         try {
             List<Double> peaks_pre = obtainPeaks(true);
             Log.i("Process", "Output obtainPeaksPre " + Integer.toString(peaks_pre.size()));
+            long start = System.currentTimeMillis();
             List<Double> peaks = obtainPeaks(false);
+            Log.i("Time elapsed", Long.toString(System.currentTimeMillis() - start));
             Log.i("Process", "Output obtainPeaks " + Integer.toString(peaks.size()));
             Pair<List<Integer>, List<Integer>> res = peaks2bits(peaks_pre, peaks);
 
