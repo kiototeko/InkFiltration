@@ -1,9 +1,4 @@
 #!/bin/bash
-# Have debug info in /var/log/cups/error_log:
-set -x
-# Set the output file name:
-this_script_basename=$( basename ${BASH_SOURCE[0]} )
-output_file="/tmp/$this_script_basename.input"
 # Have the input at fd0 (stdin) in any case:
 test -n "$6" && exec <"$6"
 
@@ -46,18 +41,22 @@ RGB_PATTERN="[0-9].*\s[0-9].*\s[0-9].*\s"
 
 for i in "${array[@]}"
 do
+	#We first check if the object corresponds to a content stream
         AKA3=$($PEEPDF -C "object $i" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
         if [ -z $AKA3 ]; then
                 continue
         fi
+	#We obtain the STREAM from that object (page)
 	STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
 	STREAM2=""
 	
+	#If that stream contains images, we continue with other pages
 	AKA4=$(echo $STREAM | grep -wE 'BI|ID|\sDo\s*$' )
         if [ -n "$AKA4" ]; then
                 continue
         fi
 
+	#If grayscale is activated we change all colors to that color scale. (NOTE: for this you first need to modify the printer's PPD file so that choosing grayscale still prints in color).
 	if [ -n "$GRAY" ]; then
         	while IFS= read -r line
 	        do
@@ -79,33 +78,41 @@ do
 		STREAM2=$STREAM
 	fi
 
+	#We check if text is present on the page
         AKA4=$(echo $STREAM2 | grep -wE 'BT|ET' )
         if [ -n "$AKA4" ]; then
                 TEXT="y"
 		NUM_BYTES=$($FORMAT_DATA -ti $PRINTER)
 	else
+		TEXT=""
 		NUM_BYTES=$($FORMAT_DATA -i $PRINTER)		
         fi
-        echo "$NUM_BYTES" >> /tmp/log
+
+	#If the printer is Epson or Canon, a tiny decrease in the shade of black is needed
         if [ $PRINTER = "Epson" ] || [ $PRINTER = "Canon" ]; then
 		STREAM2=$(echo "$STREAM2" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/')
 	fi
-	
+
+	#We obtain our bits of data
         BYTE_DATA=$(head -c $NUM_BYTES $DATA)
+	#echo "$BYTE_DATA" >> /tmp/log
+	
+	#We create a backup of the data
         dd if=$DATA of=$DATA_TMP ibs=$NUM_BYTES skip=1
-        mv $DATA_TMP $DATA
+        mv $DATA_TMP $DATA	
+
+	#We inject the patterns into the content stream
         if [ -n "$TEXT" ]; then
 		$FORMAT_DATA -p $BYTE_DATA -t $PRINTER > $TMP_FILE
 	else
-		$FORMAT_DATA -p $BYTE_DATA $PRINTER > $TMP_FILE #For the Canon printer, the individual blank pages should be printed with the fit-to-page option
-		$FORMAT_DATA -p $BYTE_DATA $PRINTER > /tmp/loco
+		$FORMAT_DATA -p $BYTE_DATA $PRINTER > $TMP_FILE
 	fi
         echo -e $STREAM2  >> $TMP_FILE	
         echo -e "modify stream $AKA3 $TMP_FILE\nsave" > $TMP_PEEP
         $PEEPDF -s $TMP_PEEP $FILE_IN
 
-	echo $STREAM2 >> /tmp/log
 done
 
 
+#The file should be output to standard output
 cat $FILE_IN
