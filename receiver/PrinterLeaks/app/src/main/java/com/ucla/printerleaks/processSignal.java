@@ -259,9 +259,13 @@ abstract public class processSignal {
                 locs = getPeaksPre(remnant, sample_variable, parameter.env_window, parameter.preminH);
 
             }
-            else
-                locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
-                //locs = getPeaks(remnant, parameter.minH, parameter.env_window, parameter.peakdis);
+            else{
+                if(printer == 3 && type == 1)
+                            locs = getPeaksB(remnant, parameter.minH, parameter.env_window, 1,parameter.peakdis); //for printer 3, when using DPPM, we should put another printer number (see getPeaksA.m)
+                else
+                            locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
+                            //locs = getPeaks(remnant, parameter.minH, parameter.env_window, parameter.peakdis);
+            }
 
             for(double loc: locs) {
                 if(loc < 1 || loc > 100000)
