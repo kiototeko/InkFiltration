@@ -4,8 +4,11 @@ FLOOR=0;
 CEILING=1;
 RANGE=$(($CEILING-$FLOOR+1));
 
-if [ "$#" -lt 3 ]; then
-	echo "Wrong number of paramenters: [options] bits printer pages"
+if [ "$#" -lt 2 ]; then
+	echo "Wrong number of paramenters. Usage: randomBits.sh [options] printer pages"
+	echo "Use this function to generate random bit patterns that are injected into 'pages' number of pages of a PDF file ready to be printed by a 'printer'. By default the program injects the patterns into a PDF file with white pages"
+	echo -e "Current defined printers: $(./genericPattern.py -l)"
+	echo -e "Options:\n -l : reuse previous random bit patterns\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns"
 	exit 1
 fi
 
@@ -14,7 +17,7 @@ TEXT=""
 FILE_IN="Layouts/simpleLayoutBlank.pdf"
 
 
-ARGUMENTS=(${@: -3})
+ARGUMENTS=(${@: -2})
 
 
 while getopts "ltf:" arg; do
@@ -31,9 +34,9 @@ while getopts "ltf:" arg; do
 	esac
 done
 
-NUM_BITS=${ARGUMENTS[0]}
-NUM_PAGES=${ARGUMENTS[2]}
-PRINTER=${ARGUMENTS[1]}
+NUM_PAGES=${ARGUMENTS[1]}
+PRINTER=${ARGUMENTS[0]}
+NUM_BITS=$(./genericPattern.py -i $PRINTER)
 FILE_BITS="$PRINTER$NUM_BITS$NUM_PAGES${TEXT}_bits"
 PEEPDF="peepdf/peepdf.py"
 

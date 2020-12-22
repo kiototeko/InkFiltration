@@ -2,11 +2,8 @@
 
 import sys, getopt, math
 
+printers_list = ["HP", "Epson", "Canon"]
 
-if len(sys.argv) < 2:
-	print("Usage: genericPattern.py [OPTIONS] Printer")
-	print("Possible options\nT [arg]: change upper page boundary\np [arg]: use provided bit pattern\nt: specify text modulation\ns: line length sweep\nS: offset sweep")
-	exit()
 
 pattern = [1,0,1,1,1,0,0,0,1,1,0,1,1,0,0,1,0,1,0,0,0,0,1,1,0,1,1,1,0,1,0,1,1,1,1]
 total = 783.0
@@ -14,12 +11,11 @@ preamble = [1,0,1,0]
 text = False
 sweep = False
 sweep2 = False
-infoF = False
-printer = sys.argv[-1]
+infoB = False
 
 
 
-opts, args = getopt.getopt(sys.argv[1:], "T:p:tsSi")
+opts, args = getopt.getopt(sys.argv[1:], "T:p:tsSil")
 for opt, arg in opts:
 	if opt == '-T':
 		total = int(arg)
@@ -32,7 +28,21 @@ for opt, arg in opts:
 	elif opt == '-S':
 		sweep2 = True
 	elif opt == '-i':
-		infoF = True
+		infoB = True
+	elif opt == '-l':
+		print(printers_list)
+		exit()
+
+
+if len(sys.argv) < 2:
+	print("Usage: genericPattern.py [OPTIONS] printer")
+	print("Use this function to generate a bit pattern to inject into a PDF document. By default it prints non-text modulation, use -t otherwise. ")
+	print("Current defined printers: ", printers_list)
+	print("Possible options\n -T [arg] : change upper page boundary\n -p [arg] : use provided bit pattern\n -t : specify text modulation\n -s : line length sweep\n -S : offset sweep\n -i : display number of bits for specified printer\n -l : displays current defined printers")
+	exit()
+
+
+printer = sys.argv[-1]
 
 
 def info():
@@ -52,7 +62,7 @@ def info():
 		else:
 			return 20
 	
-if(infoF):
+if(infoB):
 	print(info())
 	exit()
 
