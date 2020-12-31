@@ -7,7 +7,7 @@ RANGE=$(($CEILING-$FLOOR+1));
 if [ "$#" -lt 2 ]; then
 	echo "Wrong number of paramenters. Usage: randomBits.sh [options] printer pages"
 	echo "Use this function to generate random bit patterns that are injected into 'pages' number of pages of a PDF file ready to be printed by a 'printer'. By default the program injects the patterns into a PDF file with white pages"
-	echo -e "Current defined printers: $(./genericPattern.py -l)"
+	echo -e "Current defined printers: $(./testPrinter.py -l)"
 	echo -e "Options:\n -l : reuse previous random bit patterns\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns"
 	exit 1
 fi
@@ -34,13 +34,13 @@ while getopts "ltf:" arg; do
 	esac
 done
 
-NUM_PAGES=${ARGUMENTS[1]}
-PRINTER=${ARGUMENTS[0]}
-NUM_BITS=$(./genericPattern.py -i $PRINTER)
-FILE_BITS="$PRINTER$NUM_BITS$NUM_PAGES${TEXT}_bits"
-PEEPDF="peepdf/peepdf.py"
+PEEPDF="python2 peepdf/peepdf.py"
 
 cp Layouts/whitePDF.pdf.old Layouts/whitePDF.pdf
+
+NUM_PAGES=${ARGUMENTS[1]}
+PRINTER=${ARGUMENTS[0]}
+
 
 if [ -n "$TEXT" ]; then
 	AKA=$($PEEPDF -C 'search "/Type /Page"'  $FILE_IN | cut -f1 -d$'\x1b')
@@ -51,7 +51,14 @@ if [ -n "$TEXT" ]; then
 	array=( ${array[@]/$AKA2} )
 	pdftk $FILE_IN cat 1 output Layouts/whitePDF.pdf
 
+	NUM_BITS=$(./testPrinter.py -ti $PRINTER)
+
+else
+	NUM_BITS=$(./testPrinter.py -i $PRINTER)
 fi
+
+FILE_BITS="${PRINTER}_${NUM_BITS}${NUM_PAGES}${TEXT}_bits"
+
 
 #if [ -n "$LOAD" ]; then
 
@@ -91,17 +98,17 @@ do
 
 	#echo $FINAL
 	if [ -z "$TEXT" ]; then
-		./genericPattern.py -p $FINAL $PRINTER > randomStream
+		./testPrinter.py -p $FINAL $PRINTER > randomStream
 
 	else
 	        AKA3=$($PEEPDF -C "object ${array[$(($j-1))]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
 	        STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
 
-		./genericPattern.py -t -p $FINAL $PRINTER > randomStream
+		./testPrinter.py -t -p $FINAL $PRINTER > randomStream
 
-		if [ $PRINTER = "Epson" ]; then
+		if [ $PRINTER = "Epson_L4150" ]; then
 			echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream			
-		elif [ $PRINTER = "Canon" ]; then
+		elif [ $PRINTER = "Canon_MG2410" ]; then
 			echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream			
 		else
 			echo "$STREAM" >> randomStream

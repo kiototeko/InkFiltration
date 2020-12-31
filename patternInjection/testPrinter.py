@@ -1,0 +1,325 @@
+#!/usr/bin/env python
+
+import sys, getopt, math
+
+        
+def blank(parameters, packet):
+        global total, max_length
+        offset = parameters['line_offset'] #offset between lines, the unit is points
+        length = parameters['line_length'] #length of the short line, the length of the long line is supposed to be the largest possible in a letter sized page (594)
+
+        if('blank_total' in parameters):
+                total = parameters['blank_total']
+                
+        short_alignment = parameters['short_alignment'] #The short line can be aligned to the 'center', 'left' or 'right'
+
+        
+        if(short_alignment == "left"):
+                left_margin = 9
+        elif(short_alignment == "center"):
+                left_margin = int((max_length+9-length)/2)
+        elif(short_alignment == "right"):
+                left_margin = max_length+9 - length
+                
+                
+        guard_init = parameters['guard_init'] #Modulation may require an initial line that separates the data transmission from the initial printer procedures
+        
+        if(guard_init):
+                print("9 %.2f %i 1 re" %(total, max_length))
+                total -= offset
+                
+        for bitidx in packet:
+
+                if(not int(bitidx)):
+                                print("%i %.2f %i 1 re" %(left_margin, total, length))
+                else:
+                        print("9 %.2f %i 1 re" %(total, max_length))
+                
+                total -= offset
+        print("9 %.2f %i 1 re" %(total, max_length)) #A final "guard" line is added so as to make sure the last time offset falls between individual roller pulses and not with respect to the random noises that the printer makes when it finishes printing a page
+        
+def text(parameters, packet):
+        global total, max_length
+        rec_width = parameters['rec_width'] #Rectangle width
+        cluster_width = parameters['cluster_width']  #Cluster of lines total width
+        cluster_lines = parameters['cluster_lines'] #Number of cluster lines
+        cluster_width_after_rec = parameters['cluster_width_after_rec'] #Cluster of lines total width after a rectangle is drawn (special case)
+        cluster_lines_after_rec = parameters['cluster_lines_after_rec'] #Number of cluster lines after a rectangle is drawn (special case)
+        cluster_left_margin = parameters['cluster_left_margin'] #Cluster of lines left margin
+        cluster_line_length = parameters['cluster_line_length'] #Cluster of lines length
+        
+        custom_space_rules_rec = parameters['custom_space_rules_rec'] #If you need more control over spacing when dealing with different bit sequences
+        extra_cluster_line = parameters['extra_cluster_line'] #If you need to add an extra line in some conditions
+
+
+        if('text_total' in parameters):
+                total = parameters['text_total']
+
+        for j,bitidx in enumerate(packet):
+
+                if(not int(bitidx)):
+                        print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))
+                        total -= cluster_width/(cluster_lines+1)
+                        for i in range(cluster_lines):
+                                print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))
+                                total -= cluster_width/(cluster_lines+1)
+                        
+                        if(extra_cluster_line):
+                                if(j > 0 and not int(packet[j-1])): #An extra line is drawn when a cluster of lines precedes the actual cluster of lines, e.g., bit sequence 0-0
+                                        print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))
+                                        total -= cluster_width/(cluster_lines+1)
+                else:
+
+                        total -= rec_width
+                        print("9 %.2f 594 %.2f re" %(total, rec_width))
+                        
+                        cluster_width_after_rec_tmp = cluster_width_after_rec
+                        
+                        if(custom_space_rules_rec):
+                                if(j + 1 < len(packet)-1 and not int(packet[j+1])): #Space is modified according to whether a rectangle follows another rectangle or a cluster of lines follow a rectangle, e.g., bit sequence 1-1 or 1-0 respectively
+                                        cluster_width_after_rec_tmp += 2
+                                else:
+                                        cluster_width_after_rec_tmp += 10
+                       
+                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec+1)
+                        for i in range(cluster_lines_after_rec):
+                                        print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))           
+                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec+1)
+
+                
+        total -= rec_width
+        print("9 %.2f %i %.2f re" %(total, max_length, rec_width))
+        
+def SweepOffset(parameters):
+        global total
+        lower_margin = 10.0
+
+        offset = parameters['line_offset']
+        total -= offset
+
+        while total > lower_margin:
+        
+                print("9 %.2f 594 1 re" %(total))
+                total -= offset
+                offset += 2
+                
+def SweepLength(parameters):
+        global total
+        offset = 28.0 #Same offset for all printers
+        lower_margin = 10.0
+        line_size = 594.0
+        start = 9.0
+        packet_size = int(math.floor((total - lower_margin)/offset))
+        line_decrement = math.floor(line_size/packet_size)
+
+        if(parameters['name'] == "Canon_MG2410" or parameters['name'] == "HP_Photosmart_D110"):
+                total -= offset
+
+        for i in range(packet_size):
+                print("%.2f %.2f %.2f 1 re" %(start, total, line_size))
+                total -= offset
+                line_size -= line_decrement
+
+                if(parameters['name'] == "HP_Photosmart_D110"):
+                        start += line_decrement/2
+                elif(parameters['name'] == "Epson_L4150"):
+                        start += line_decrement
+
+
+def printer_parameters(name):
+         
+        global total
+        parameters = {}
+        
+        if(name == "Canon_MG2410"):
+        
+                parameters['name'] = "Canon_MG2410"
+        
+                #Text
+                parameters['rec_width'] = 42.0
+                parameters['cluster_width'] = 28.0
+                parameters['cluster_lines'] = 1
+                parameters['cluster_width_after_rec'] = 28.0
+                parameters['cluster_lines_after_rec'] = 1
+                parameters['cluster_left_margin'] = 9
+                parameters['cluster_line_length'] = 594
+                parameters['custom_space_rules_rec'] = False
+                parameters['extra_cluster_line'] = True
+                parameters['yellow_shade_text'] = 0.94
+                parameters['packet_size_text'] = 11
+                
+                #Blank        
+                parameters['line_length'] = 10
+                parameters['line_offset'] = 27.0 #Could be adjusted to 21.0
+                parameters['short_alignment'] = "left"
+                parameters['guard_init'] = True
+                parameters['blank_total'] = 781
+                parameters['yellow_shade_blank'] = 0.94
+                parameters['packet_size_blank'] = 25
+                
+        elif(name == "Epson_L4150"):
+        
+                parameters['name'] = "Epson_L4150"
+                
+                #Text
+                parameters['rec_width'] = 24.0
+                parameters['cluster_width'] = 42.0
+                parameters['cluster_lines'] = 3
+                parameters['cluster_width_after_rec'] = 42.0
+                parameters['cluster_lines_after_rec'] = 3
+                parameters['cluster_left_margin'] = 56.8
+                parameters['cluster_line_length'] = 500
+                parameters['custom_space_rules_rec'] = False
+                parameters['extra_cluster_line'] = False
+                parameters['yellow_shade_text'] = 0.99
+                parameters['packet_size_text'] = 12
+                
+                #Blank        
+                parameters['line_length'] = 50
+                parameters['line_offset'] = 24.0
+                parameters['short_alignment'] = "right"
+                parameters['guard_init'] = False
+                parameters['yellow_shade_blank'] = 0.97
+                parameters['packet_size_blank'] = 32
+                
+        elif(name == "HP_Photosmart_D110"):
+        
+                parameters['name'] = "HP_Photosmart_D110"
+                
+                #Text
+                parameters['rec_width'] = 25.0
+                parameters['cluster_width'] = 32.0
+                parameters['cluster_lines'] = 10
+                parameters['cluster_width_after_rec'] = 21.0
+                parameters['cluster_lines_after_rec'] = 5
+                parameters['cluster_left_margin'] = 9
+                parameters['cluster_line_length'] = 594
+                parameters['custom_space_rules_rec'] = True
+                parameters['extra_cluster_line'] = False
+                parameters['yellow_shade_text'] = 0.99
+                parameters['packet_size_text'] = 15
+        
+                #Blank        
+                parameters['line_length'] = 100
+                parameters['line_offset'] = 25.0
+                parameters['short_alignment'] = "center"
+                parameters['guard_init'] = False
+                parameters['yellow_shade_blank'] = 0.99
+                parameters['packet_size_blank'] = 30
+                
+        return parameters
+        
+def get_parity_bit(pattern):
+        parity = 0
+        for i,bitidx in enumerate(pattern):
+                parity += int(bitidx)
+                
+                if(i == len(pattern)-1):
+                        parity %= 2
+
+        return parity
+
+
+textmod = False
+raw_mode = False
+info_bits = False
+printer_name_list = ['HP_Photosmart_D110', 'Epson_L4150', 'Canon_MG2410']
+
+if len(sys.argv) < 2:
+        print("Usage: testPrinter.py [OPTIONS] printer_name")
+        print("Use this function to generate a bit pattern to inject into a PDF document. By default it prints non-text modulation, use -t otherwise. ")
+        print("Current defined printers: ", printer_name_list)
+        print("Possible options\n -p [arg] : use provided bit pattern\n -t : specify text modulation\n -s : line length sweep\n -S : offset sweep\n -i : display number of bits for specified printer\n -l : displays current defined printers")
+        exit()
+
+name = sys.argv[-1]
+
+if(name not in printer_name_list):
+        print("(ERROR) Printer has not been implemented. Current printer list:", printer_name_list)
+        exit(1)
+
+parameters = printer_parameters(name)
+
+total = 783.0 
+"""
+total is the upper vertical margin limit in the page, it depends on the size of the page, in this case it is for letter size
+For a paper page in portrait mode, the x scale starts at the left edge and the y scale starts at the bottom of the page
+It is important to check if the printer doesn't skip the first line or rectangle, for this modifying the total to be lower might help, or putting a "guard" line or rectangle first in the page that won't be part of the packet, just to make place for the next lines or rectangles.
+"""
+
+opts, args = getopt.getopt(sys.argv[1:], "Ssitrlp:")
+for opt, arg in opts:
+        if opt == '-t':
+                textmod = True
+        elif opt == '-p':
+                pattern = list(arg)
+        elif opt == '-r':
+                raw_mode = True
+        elif opt == '-i':
+                info_bits = True
+        elif opt == '-l':
+                print(printer_name_list)
+                exit()
+        elif opt == '-s':
+                yellow_shade = parameters['yellow_shade_blank']
+                print("q\n1.0 1.0", yellow_shade, "rg")
+                SweepLength(parameters)
+                print("f\nQ\n")
+                exit()
+        elif opt == '-S':
+                yellow_shade = parameters['yellow_shade_blank']
+                print("q\n1.0 1.0", yellow_shade, "rg")
+                SweepOffset(parameters)
+                print("f\nQ\n")
+                exit()
+                
+                
+if(info_bits):
+        if(textmod):
+                print(parameters['packet_size_text']-5)
+        else:
+                print(parameters['packet_size_blank']-5)
+        exit()
+
+
+pattern = "1110001010111001001011010010111001001001" #Bit sequence example
+preamble = "1010" #Preamble to all packets
+max_length = 594 #Maximum line length with respect to the width of the page and its margins
+
+
+if(textmod):
+        sz = parameters['packet_size_text']
+        if(len(pattern) < sz-5):
+                print("(ERROR) Bit pattern should be greater than:", sz)
+                exit(1)
+        yellow_shade = parameters['yellow_shade_text'] #this can go from 0 to 1.0, where 0 is completly yellow and 1.0 absence of yellow
+        print("q\n1.0 1.0", yellow_shade, "rg") 
+        
+        if(not raw_mode):
+                parity = get_parity_bit(pattern[0:sz-5])
+                text(parameters, preamble + pattern[0:sz-5] + str(parity))
+        else:
+                text(parameters, pattern[0:sz])
+else:
+        sz = parameters['packet_size_blank']
+        if(len(pattern) < sz-5):
+                print("(ERROR) Bit pattern should be greater than:", sz)
+                exit(1)
+        yellow_shade = parameters['yellow_shade_blank']
+        print("q\n1.0 1.0", yellow_shade, "rg")
+        
+        if(not raw_mode):
+                parity = get_parity_bit(pattern[0:sz-5])
+                blank(parameters, preamble + pattern[0:sz-5] + str(parity))
+        else:
+                blank(parameters, pattern[0:sz])
+
+print("f\nQ\n")
+
+
+
+
+
+
+
+

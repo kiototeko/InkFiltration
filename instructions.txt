@@ -1,0 +1,27 @@
+To download with the submodules use the next command: git clone --recurse-submodules https://github.com/nesl/InkFiltration.git
+
+First of all, to add a new printer, you could try and test if the existing functions work with it. For that you may print a page and record the sounds for both the case were you have a blank page and were you have a page with text.
+Use the next command to create a blank page with modulation for a desired printer (e.g. for an HP printer):
+./randomBits.sh HP 1
+
+Or to create a text page with modulation, you can use one of the layouts in the Layouts directory:
+./randomBits.sh -tf Layouts/simpleLayoutArial.pdf HP 1
+
+Executing either command will result in a text file containing the random bits used in the modulation, for reference, with a name like HP251_bits or HP101text_bits respectively.
+A pdf file named as testPDF.pdf will also be created, and this file will be the one that should be printed.
+
+In linux, printing should be made from the command line when testing, as other programs may add some modifications to the pdf file that would render ineffective the modulation.
+To print from command line you first need to get the printer's name, which can be retrieved by calling:
+lpstat -e
+Which will display a list of printers that have been configured in your system.
+Search for your desired printer, copy its name and use the next command to print the file:
+
+lp -d PRINTER_NAME testPDF.pdf
+
+With this command you can specify the page range with the -P option, and the number of copies with the -n option.
+
+After recording the sound of the printer while printing, you can use the MATLAB program "testdemod.m" to inspect the waveform and spectrogram and see if anything coherent surfaces.
+You may want to convert the sound file into wav format by using for example "ffmpeg -i filename.oldformat filename.newformat"
+
+If transmission doesn't seem to be correct, you may use 
+
