@@ -22,11 +22,12 @@ def blank(parameters, packet):
                 left_margin = max_length+9 - length
                 
                 
-        guard_init = parameters['guard_init'] #Modulation may require an initial line that separates the data transmission from the initial printer procedures
+        guard_init = parameters['guard_init'] #Modulation may require an initial line that separates the data transmission from the initial printer procedures. You can specify how many initial lines to separate your data lines.
         
-        if(guard_init):
-                print("9 %.2f %i 1 re" %(total, max_length))
-                total -= offset
+        if(guard_init > 0):
+                for i in range(guard_init):
+                        print("9 %.2f %i 1 re" %(total, max_length))
+                        total -= offset
                 
         for bitidx in packet:
 
@@ -36,7 +37,9 @@ def blank(parameters, packet):
                         print("9 %.2f %i 1 re" %(total, max_length))
                 
                 total -= offset
-        print("9 %.2f %i 1 re" %(total, max_length)) #A final "guard" line is added so as to make sure the last time offset falls between individual roller pulses and not with respect to the random noises that the printer makes when it finishes printing a page
+                
+        if(parameters['guard_end']):
+                print("9 %.2f %i 1 re" %(total, max_length)) #A final "guard" line is added so as to make sure the last time offset falls between individual roller pulses and not with respect to the random noises that the printer makes when it finishes printing a page
         
 def text(parameters, packet):
         global total, max_length
@@ -88,7 +91,8 @@ def text(parameters, packet):
 
                 
         total -= rec_width
-        print("9 %.2f %i %.2f re" %(total, max_length, rec_width))
+        if(parameters['guard_end']):
+                print("9 %.2f %i %.2f re" %(total, max_length, rec_width))
         
 def SweepOffset(parameters):
         global total
@@ -126,14 +130,14 @@ def SweepLength(parameters):
                         start += line_decrement
 
 
-def printer_parameters(name):
+def printer_parameters(key):
          
         global total
         parameters = {}
         
-        if(name == "Canon_MG2410"):
+        if(key == 0): #Canon_MG2410
         
-                parameters['name'] = "Canon_MG2410"
+                parameters['guard_end'] = True
         
                 #Text
                 parameters['rec_width'] = 42.0
@@ -152,14 +156,14 @@ def printer_parameters(name):
                 parameters['line_length'] = 10
                 parameters['line_offset'] = 27.0 #Could be adjusted to 21.0
                 parameters['short_alignment'] = "left"
-                parameters['guard_init'] = True
+                parameters['guard_init'] = 1
                 parameters['blank_total'] = 781
                 parameters['yellow_shade_blank'] = 0.94
                 parameters['packet_size_blank'] = 25
                 
-        elif(name == "Epson_L4150"):
+        elif(key == 1): #Epson_L4150
         
-                parameters['name'] = "Epson_L4150"
+                parameters['guard_end'] = True
                 
                 #Text
                 parameters['rec_width'] = 24.0
@@ -178,13 +182,13 @@ def printer_parameters(name):
                 parameters['line_length'] = 50
                 parameters['line_offset'] = 24.0
                 parameters['short_alignment'] = "right"
-                parameters['guard_init'] = False
+                parameters['guard_init'] = 0
                 parameters['yellow_shade_blank'] = 0.97
                 parameters['packet_size_blank'] = 32
                 
-        elif(name == "HP_Photosmart_D110"):
+        elif(key == 2): #HP_Photosmart_D110
         
-                parameters['name'] = "HP_Photosmart_D110"
+                parameters['guard_end'] = True
                 
                 #Text
                 parameters['rec_width'] = 25.0
@@ -203,9 +207,63 @@ def printer_parameters(name):
                 parameters['line_length'] = 100
                 parameters['line_offset'] = 25.0
                 parameters['short_alignment'] = "center"
-                parameters['guard_init'] = False
+                parameters['guard_init'] = 0
                 parameters['yellow_shade_blank'] = 0.99
                 parameters['packet_size_blank'] = 30
+                
+        elif(key == 3): #HP_Deskjet_1115
+        
+                parameters['guard_end'] = False
+                
+                #Text
+                parameters['rec_width'] = 25.0
+                parameters['cluster_width'] = 100.0
+                parameters['cluster_lines'] = 0
+                parameters['cluster_width_after_rec'] = 21.0
+                parameters['cluster_lines_after_rec'] = 0
+                parameters['cluster_left_margin'] = 56.8
+                parameters['cluster_line_length'] = 500
+                parameters['custom_space_rules_rec'] = False
+                parameters['extra_cluster_line'] = False
+                parameters['yellow_shade_text'] = 0.95
+                parameters['packet_size_text'] = 15
+        
+                #Blank        
+                parameters['line_length'] = 100
+                parameters['line_offset'] = 25.0
+                parameters['short_alignment'] = "center"
+                parameters['guard_init'] = 2
+                parameters['yellow_shade_blank'] = 0.98
+                parameters['packet_size_blank'] = 29 #Not sure about this one, still needs testing
+               
+        """ 
+        Template for new printers, add your printer name in printer_name_list
+       
+        elif(key == 4): #Printer name
+        
+                parameters['guard_end'] = True
+                
+                #Text
+                parameters['rec_width'] = 25.0
+                parameters['cluster_width'] = 32.0
+                parameters['cluster_lines'] = 10
+                parameters['cluster_width_after_rec'] = 21.0
+                parameters['cluster_lines_after_rec'] = 5
+                parameters['cluster_left_margin'] = 9
+                parameters['cluster_line_length'] = 594
+                parameters['custom_space_rules_rec'] = False
+                parameters['extra_cluster_line'] = False
+                parameters['yellow_shade_text'] = 0.99
+                parameters['packet_size_text'] = 15
+        
+                #Blank        
+                parameters['line_length'] = 100
+                parameters['line_offset'] = 25.0
+                parameters['short_alignment'] = "center"
+                parameters['guard_init'] = 0
+                parameters['yellow_shade_blank'] = 0.99
+                parameters['packet_size_blank'] = 30
+        """
                 
         return parameters
         
@@ -223,14 +281,19 @@ def get_parity_bit(pattern):
 textmod = False
 raw_mode = False
 info_bits = False
-printer_name_list = ['HP_Photosmart_D110', 'Epson_L4150', 'Canon_MG2410']
+printer_name_list = ['Canon_MG2410', 'Epson_L4150', 'HP_Photosmart_D110', 'HP_Deskjet_1115'] #Add your printer name here
 
 if len(sys.argv) < 2:
         print("Usage: testPrinter.py [OPTIONS] printer_name")
         print("Use this function to generate a bit pattern to inject into a PDF document. By default it prints non-text modulation, use -t otherwise. ")
         print("Current defined printers: ", printer_name_list)
-        print("Possible options\n -p [arg] : use provided bit pattern\n -t : specify text modulation\n -s : line length sweep\n -S : offset sweep\n -i : display number of bits for specified printer\n -l : displays current defined printers")
+        print("Possible options\n -p [arg] : use provided bit pattern\n -t : specify text modulation\n -s : line length sweep\n -S : offset sweep\n -i : display number of bits for specified printer\n -l : displays current defined printers\n -r : raw mode, used to specify bit patterns of any size without respecting established packet sizes")
         exit()
+        
+if("-l" in sys.argv): #Special option
+        print(printer_name_list)
+        exit()
+
 
 name = sys.argv[-1]
 
@@ -238,7 +301,9 @@ if(name not in printer_name_list):
         print("(ERROR) Printer has not been implemented. Current printer list:", printer_name_list)
         exit(1)
 
-parameters = printer_parameters(name)
+
+parameters = printer_parameters(printer_name_list.index(name))
+parameters['name'] = name
 
 total = 783.0 
 """
@@ -247,7 +312,11 @@ For a paper page in portrait mode, the x scale starts at the left edge and the y
 It is important to check if the printer doesn't skip the first line or rectangle, for this modifying the total to be lower might help, or putting a "guard" line or rectangle first in the page that won't be part of the packet, just to make place for the next lines or rectangles.
 """
 
-opts, args = getopt.getopt(sys.argv[1:], "Ssitrlp:")
+pattern = "1110001010111001001011010010111001001001" #Bit sequence example
+preamble = "1010" #Preamble to all packets
+max_length = 594 #Maximum line length with respect to the width of the page and its margins
+
+opts, args = getopt.getopt(sys.argv[1:], "Ssitrp:")
 for opt, arg in opts:
         if opt == '-t':
                 textmod = True
@@ -257,9 +326,6 @@ for opt, arg in opts:
                 raw_mode = True
         elif opt == '-i':
                 info_bits = True
-        elif opt == '-l':
-                print(printer_name_list)
-                exit()
         elif opt == '-s':
                 yellow_shade = parameters['yellow_shade_blank']
                 print("q\n1.0 1.0", yellow_shade, "rg")
@@ -282,37 +348,35 @@ if(info_bits):
         exit()
 
 
-pattern = "1110001010111001001011010010111001001001" #Bit sequence example
-preamble = "1010" #Preamble to all packets
-max_length = 594 #Maximum line length with respect to the width of the page and its margins
-
 
 if(textmod):
-        sz = parameters['packet_size_text']
-        if(len(pattern) < sz-5):
-                print("(ERROR) Bit pattern should be greater than:", sz)
-                exit(1)
+        
         yellow_shade = parameters['yellow_shade_text'] #this can go from 0 to 1.0, where 0 is completly yellow and 1.0 absence of yellow
         print("q\n1.0 1.0", yellow_shade, "rg") 
         
         if(not raw_mode):
+                sz = parameters['packet_size_text']
+                if(len(pattern) < sz-5):
+                        print("(ERROR) Bit pattern should be greater than:", sz)
+                        exit(1)
                 parity = get_parity_bit(pattern[0:sz-5])
                 text(parameters, preamble + pattern[0:sz-5] + str(parity))
         else:
-                text(parameters, pattern[0:sz])
+                text(parameters, pattern)
 else:
-        sz = parameters['packet_size_blank']
-        if(len(pattern) < sz-5):
-                print("(ERROR) Bit pattern should be greater than:", sz)
-                exit(1)
+        
         yellow_shade = parameters['yellow_shade_blank']
         print("q\n1.0 1.0", yellow_shade, "rg")
         
         if(not raw_mode):
+                sz = parameters['packet_size_blank']
+                if(len(pattern) < sz-5):
+                        print("(ERROR) Bit pattern should be greater than:", sz)
+                        exit(1)
                 parity = get_parity_bit(pattern[0:sz-5])
                 blank(parameters, preamble + pattern[0:sz-5] + str(parity))
         else:
-                blank(parameters, pattern[0:sz])
+                blank(parameters, pattern)
 
 print("f\nQ\n")
 

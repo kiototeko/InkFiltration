@@ -8,7 +8,7 @@ if [ "$#" -lt 2 ]; then
 	echo "Wrong number of paramenters. Usage: randomBits.sh [options] printer pages"
 	echo "Use this function to generate random bit patterns that are injected into 'pages' number of pages of a PDF file ready to be printed by a 'printer'. By default the program injects the patterns into a PDF file with white pages"
 	echo -e "Current defined printers: $(./testPrinter.py -l)"
-	echo -e "Options:\n -l : reuse previous random bit patterns\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns"
+	echo -e "Options:\n -l : reuse previous random bit patterns\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)"
 	exit 1
 fi
 
