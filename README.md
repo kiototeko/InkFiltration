@@ -7,60 +7,50 @@ The code consists of the follwing:
 1. A series of programs used to inject the patterns into documents. These are located in the **patternInjection** directory.
 1. The **receiver** code that was implemented both in MATLAB and for an Android app.
 
-To download with the submodules use the next command: git clone --recurse-submodules https://github.com/nesl/InkFiltration.git
+To download with the submodules use the next command: `git clone --recurse-submodules https://github.com/nesl/InkFiltration.git`
 
-# Procedure to add a new printer
+## Procedure to add a new printer
 
-## Trying existing parameters
+### Trying existing parameters
 
-First of all, to add a new printer, you could try and test if the existing functions work with it. For that you may print a page and record the sounds for both the case were you have a blank page and were you have a page with text.
-Use the next command to create a blank page with modulation for a desired printer (e.g. for an HP printer):
-./randomBits.sh HP 1
+- First of all, to add a new printer, you could try to test if the existing parameters defined for other printers work with it. For that you may print a page using one of these set of parameters and record the sounds for both the case were you have a blank page and were you have a page with text.
 
-Or to create a text page with modulation, you can use one of the layouts in the Layouts directory:
-./randomBits.sh -tf Layouts/simpleLayoutArial.pdf HP 1
+        - Use the next command to create a blank page with modulation for a desired printer (e.g. for an HP printer): `./randomBits.sh HP_Photosmart_D110 1`
 
-Executing either command will result in a text file containing the random bits used in the modulation, for reference, with a name like HP251_bits or HP101text_bits respectively.
-A pdf file named as testPDF.pdf will also be created, and this file will be the one that should be printed.
+        - Or to create a text page with modulation, you can use one of the layouts in the Layouts directory: `./randomBits.sh -tf Layouts/simpleLayoutArial.pdf HP_Photosmart_D110 1`
 
-In linux, printing should be made from the command line when testing, as other programs may add some modifications to the pdf file that would render ineffective the modulation.
-To print from command line you first need to get the printer's name, which can be retrieved by calling:
-lpstat -e
-Which will display a list of printers that have been configured in your system.
-Search for your desired printer, copy its name and use the next command to print the file:
+        - Executing either command will result in two files: one text file containing the random bits used in the modulation, with a name like *HP_Photosmart_D110_251_bits* or *HP_Photosmart_D110_101text_bits* respectively. The other file will be a pdf file named *testPDF.pdf*: this file will be the one that should be printed.
 
-lp -d PRINTER_NAME testPDF.pdf
+- In Linux, when testing, printing should be made from the command line, as other programs may add some modifications to the pdf file that would render ineffective the modulation.
 
-With this command you can specify the page range with the -P option, and the number of copies with the -n option.
+        - To print from command line you first need to get the printer's name, which can be retrieved by calling: `lpstat -e`. This will display a list of printers that have been configured in your system.
 
-After recording the sound of the printer while printing, you can use the MATLAB program "testdemod.m" to inspect the waveform and spectrogram and see if anything coherent surfaces.
-You may want to convert the sound file into wav format by using for example "ffmpeg -i filename.oldformat filename.newformat"
+        - Search for the name of your desired printer, copy its name and use the next command to print the file: `lp -d PRINTER_NAME testPDF.pdf`. With this command you can specify the page range with the -P option, and the number of copies with the -n option.
 
-If transmission doesn't seem to be correct, you may use 
+- After recording the sound of the printer while printing, you can use the MATLAB program *testdemod.m* to inspect the waveform and spectrogram. This may be useful to see if the modulation is effective.
 
-For testing purposes you can record directly from your computer by using the following command:
-arecord -t wav -c 1 -r 44100 -f S16_LE file.wav
+- You may want to convert the sound file into .wav format by using for example: `ffmpeg -i filename.oldformat filename.newformat`
 
-To aide you through this testing procedure, you may try to also record the sound so that you can inspect it again as many times as you want.
+- For testing purposes you can record directly from your computer by using the following command: `arecord -t wav -c 1 -r 44100 -f S16_LE file.wav`
 
-## Discovering new parameters
+### Discovering new parameters
 
-### Testing algorithm for DPPM:
+If the previous parameters defined for other printers don't seem to be effective, you will need to define new ones. As there are two different modulations, two different procedures are defined. The program you will use to define the parameters is in *patternInjection/testPrinter.py*. In this program there is a template in *printer_parameters* function that you will use to define the parameters for your new printer. You can start with the predefined parameters and adjust them later. To print a page use the program *patternInjection/raw_injection.sh* as explained below. To aide you through this testing procedure, you may want to record the sound with your smartphone so that you can inspect the recording immediately as many times as you want and notice the patterns.
 
-1. Two parameters are important at first, line_offset and yellow_shade_blank. The first tests should try to print sequences of lines and see if the number of rollers sounds the printer makes is equivalent to the number of lines sent to print (just take into account that the first and last lines may not generate the same sound because of their proximity to the initial and final sounds the printer makes). A sequence like "111111" or "000000" may be good enough to determine this. It should be noticed that in this step you should no try at first to use the lightest yellow shade as that may not be recognized by the printer (yellow_shade_blank use for example 0.9 or less). Then, if the number of lines doesn't correspond to the number of sounds, you should try to increase the line offset. If your line offset is sufficient, you may try decreasing it until you find its limit, the same with the yellow shade value, you may increase it until you see the printer stops recognizing the lines. Just remember that decreasing the offset size may also attenuate the sound, so you also need to take this into account.
+#### Testing algorithm for DPPM (blank pages):
 
-2. Once you have the correct offset and color, you should try printing patterns like "1010110101", which should result in a combination of short and large pulse differences. It should be noted that you should try both "10" and "01" patterns as there may be some issues when changing the bit order. If it results in problems, you may try changing the short_alignment parameter towards either "right", "center", or "left", as this alignes the short lines towards a respective side.
+1. Two parameters in *patternInjection/testPrinter.py* are important at first, *line_offset* and *yellow_shade_blank*. The first printing tests should try to print sequences of lines and see if the number of roller sounds the printer makes is equivalent to the number of lines drawn in the page document (just take into account that the first and last lines may not generate the same sound because of their proximity to the initial and final random sounds the printer makes). A sequence like **111111** or **000000** may be good enough to determine this. It should be noticed that in this step you shouldn't try at first to use the lightest yellow shade as that may not be recognized by the printer (a *yellow_shade_blank* of **0.9** or less should be fine). Then, if the number of lines doesn't correspond to the number of sounds, you should try to increase the line offset with the *line_offset* parameter. If your line offset is sufficient, you may try decreasing it until you find its lower limit, the same with the yellow shade value, you may increase it until you see the printer stops recognizing the lines. Just remember that decreasing the offset size may also attenuate the sound, so to take this into account.
 
-3. You may want to play with the line_length parameter so as to produce the maximum difference in time between pulses by combining the shortest line possible with the longest line possible. Finally, you may want to add a guard line both at the start (guard_init) as well as at the end (guard_end) to isolate the sounds from the start and end sounds the printer makes. It may also work if you change the starting point by modifying the blank_total parameter.
+2. Once you have the correct offset and color, you should try printing patterns like **1010110101**, which should result in a combination of short and large delays in the sound pulses. It should be noted that you should try both **10** and **01** patterns as there may be some issues when changing the bit order. If this results in problems, you may try changing the *short_alignment* parameter towards either **right**, **center**, or **left**, as this aligns the short lines towards a respective side.
 
-4. Calculating the packet size (packet_size_blank) is just a matter of counting the number of lines that you are able to inject into the document without passing the margins (remember that the lower limit is 9).
+3. You may want to play with the *line_length* parameter so as to produce the maximum difference in time between pulses by combining the shortest line possible with the longest line possible. Finally, you may want to add a buffer line both at the start of the page (*guard_init*) as well as at the end (*guard_end*) to isolate the pulse sounds from the random sounds the printer makes at start and end. It may also work for you to change the vertical starting point in the page by modifying the *blank_total* parameter.
 
-### Testing algorithm for FPM-DPPM
+4. Calculating the packet size (*packet_size_blank*) is just a matter of counting the number of lines that you are able to inject into the document without bypassing the page's margins (remember that the lower limit is **9**).
 
-1. You may want to start with a relatively large rectangle width (rec_width maybe 100) and print a bit sequence like 101010 and see if there is a frequency occurs. You should try this also with a not so light yellow shade (yellow_shade_text of 0.9 o less). After this you should try to reduce the rectangle width to its minimum. At this point it is recommended to use the blank file Layouts/whitePages.pdf.
+#### Testing algorithm for FPM-DPPM (text pages):
 
-./raw_injection.sh -tf Layouts/whitePages.pdf HP_Deskjet_1115 "101010101010"
+1. You may want to start with a relatively large rectangle width (*rec_width* of maybe **50** or **100**) and print a bit sequence like **101010** and see if a frequency change occurs. You should also try this procedure with a not so light yellow shade (*yellow_shade_text* of **0.9** or less). After this you should try to reduce the rectangle width to its minimum. For this point it is recommended to use the blank file *Layouts/whitePages.pdf*, example: `./raw_injection.sh -tf Layouts/whitePages.pdf HP_Deskjet_1115 "101010101010"`
 
-2. Because this modulation is supposed to be used with text, and blank documents might produce other behaviour, if somehow the previous procedure didn't produce any change, you should now try with a text document. When testing with a text document the modulation may not work as well as with the blank document. At this point you may first want to modify the cluster lines width (cluster_width) large enough, you may also want to reduce the number of cluster lines (cluster_lines and cluster_lines_after_rec) to 0 (which means only one line is utilized) and play again with the rectangle width parameter. There is a trick you can do so as to lower the blackness of the text in the document so as to enhance the power of the patterns by specifying the -b flag. Another trick you can use is to reduce the length of the cluster lines so as to make them encompass only the same space as the text in the document, by modifying the cluster_left_margin and cluster_line_length parameters (by putting 56.8 and 500 for example).
+2. Because this type of modulation is supposed to be used with text documents, and blank documents might produce other behaviours, if somehow the previous procedure didn't produce any change, don't worry. Either way you should now try with a text document. When testing with a text document the printer modulation may not work as well as with the blank document. At this point you may first want to modify the cluster lines width (*cluster_width*) to be large enough, you may also want to reduce the number of cluster lines (*cluster_lines* and *cluster_lines_after_rec*) to **0** (which means only one line is utilized) and play again with the rectangle width parameter. There is a trick you can do so as to lower the blackness of the text in the document and enhance the potential of the patterns by specifying the -b flag while using the *patternInjection/raw_injection.sh* program. Another trick you can use is to reduce the length of the cluster lines so as to make them encompass only the same space as the text in the document, by modifying the *cluster_left_margin* and *cluster_line_length* parameters (by using **56.8** and **500** as values respectively, for example).
 
-3. Once you can achieve the same frequency effect with text documents, you may want to add cluster lines and test the modulation in text documents with gaps in them, to see if it is robust to those spacings (you may also want to test it again on a blank page). Now, at this point you may want to make sure the next patterns are also handled well: "111", "000", and derived variations. At this point you may need further tinkering by utilizing both the cluster_width_after_rec and cluster_lines_after_rec, which are bit sequence dependent. The first one modifies the buffer cluster lines introduced after every rectangle and the second one modifies the number of lines in this cluster. This is important specially when you have continous rectangles as each of this should be separated by a cluster of lines. For this part you may already want to use the MATLAB scripts to find the time offset between pulses and analyze the waveform. There is also custom_space_rules_rec which gives you a finer control on space following a rectangle and extra_cluster_line for space following a cluster of lines.
+3. Once you can achieve the same frequency effect with text documents, you may want to add cluster lines and test the modulation in text documents with blank gaps in them, to see if it is robust to those spacings (you may also want to test it again on a blank page). Now, at this point you may want to make sure the next patterns are also handled well: **111**, **000**, and derived variations. At this point you may need further parameter adjustment by utilizing both the *cluster_width_after_rec* and *cluster_lines_after_rec* parameters, which are bit sequence dependent. The first one modifies the buffer cluster lines introduced after every rectangle and the second one modifies the number of lines in this cluster. This is important specially when you have continous rectangles, as each of this should be separated by a cluster of lines to ensure they produce independent sounds. For this part you may already want to use the MATLAB scripts to find the time offset between pulses and analyze the waveform. There is also *custom_space_rules_rec* parameter which gives you a finer control on the space following a rectangle and the *extra_cluster_line* parameter for controlling the space following a cluster of lines.

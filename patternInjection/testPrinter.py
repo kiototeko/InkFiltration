@@ -130,7 +130,7 @@ def SweepLength(parameters):
                         start += line_decrement
 
 
-def printer_parameters(key):
+def printer_parameters(key): #Remember to define your printer name below in printer_name_list
          
         global total
         parameters = {}
