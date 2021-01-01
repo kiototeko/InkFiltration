@@ -15,17 +15,17 @@ To download with the submodules use the next command: `git clone --recurse-submo
 
 - First of all, to add a new printer, you could try to test if the existing parameters defined for other printers work with it. For that you may print a page using one of these set of parameters and record the sounds for both the case were you have a blank page and were you have a page with text.
 
-        - Use the next command to create a blank page with modulation for a desired printer (e.g. for an HP printer): `./randomBits.sh HP_Photosmart_D110 1`
+  - Use the next command to create a blank page with modulation for a desired printer (e.g. for an HP printer): `./randomBits.sh HP_Photosmart_D110 1`
 
-        - Or to create a text page with modulation, you can use one of the layouts in the Layouts directory: `./randomBits.sh -tf Layouts/simpleLayoutArial.pdf HP_Photosmart_D110 1`
+  - Or to create a text page with modulation, you can use one of the layouts in the Layouts directory: `./randomBits.sh -tf Layouts/simpleLayoutArial.pdf HP_Photosmart_D110 1`
 
-        - Executing either command will result in two files: one text file containing the random bits used in the modulation, with a name like *HP_Photosmart_D110_251_bits* or *HP_Photosmart_D110_101text_bits* respectively. The other file will be a pdf file named *testPDF.pdf*: this file will be the one that should be printed.
+  - Executing either command will result in two files: one text file containing the random bits used in the modulation, with a name like *HP_Photosmart_D110_251_bits* or *HP_Photosmart_D110_101text_bits* respectively. The other file will be a pdf file named *testPDF.pdf*: this file will be the one that should be printed.
 
 - In Linux, when testing, printing should be made from the command line, as other programs may add some modifications to the pdf file that would render ineffective the modulation.
 
-        - To print from command line you first need to get the printer's name, which can be retrieved by calling: `lpstat -e`. This will display a list of printers that have been configured in your system.
+  - To print from command line you first need to get the printer's name, which can be retrieved by calling: `lpstat -e`. This will display a list of printers that have been configured in your system.
 
-        - Search for the name of your desired printer, copy its name and use the next command to print the file: `lp -d PRINTER_NAME testPDF.pdf`. With this command you can specify the page range with the -P option, and the number of copies with the -n option.
+  - Search for the name of your desired printer, copy its name and use the next command to print the file: `lp -d PRINTER_NAME testPDF.pdf`. With this command you can specify the page range with the -P option, and the number of copies with the -n option.
 
 - After recording the sound of the printer while printing, you can use the MATLAB program *testdemod.m* to inspect the waveform and spectrogram. This may be useful to see if the modulation is effective.
 
