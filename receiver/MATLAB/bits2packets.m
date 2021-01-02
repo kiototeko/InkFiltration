@@ -26,9 +26,9 @@ if(type == "Blank")
             done = 1;
         end
 
-        if(done == 1 && (bits(idx2) == 1 && bits(idx2+1) == 0 && bits(idx2+2) == 1 && bits(idx2+3) == 0))
+        if(done == 1 && (bits(idx2) == 1 && bits(idx2+1) == 0 && bits(idx2+2) == 1 && bits(idx2+3) == 0)) %Checks for preamble
 
-            parity = mod(sum(bits(idx2+4:idx2+4+parameter.szbits-2)),2);
+            parity = mod(sum(bits(idx2+4:idx2+4+parameter.szbits-2)),2); %Checks for parity bit
 
             if previdx3 < idx3
                 num_bits = num_bits + num_bits_tmp;
@@ -38,6 +38,9 @@ if(type == "Blank")
             
             tmp = (parameter.szbits-1) - (parameter.szbits-1)*pdist([bitstring;bits(idx2+4:idx2+4+parameter.szbits-2)], 'hamming');
             
+            %There can be false positives so this procedure ensures the bit
+            %sequence with lowest hamming distance is the one being
+            %compared
             if tmp > num_bits_tmp
                 num_bits_tmp = tmp;
             end

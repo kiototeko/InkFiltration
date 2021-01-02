@@ -216,20 +216,21 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = False
                 
                 #Text
-                parameters['rec_width'] = 25.0
-                parameters['cluster_width'] = 100.0
+                parameters['rec_width'] = 40 #minimum 25
+                parameters['cluster_width'] = 50.0
                 parameters['cluster_lines'] = 0
-                parameters['cluster_width_after_rec'] = 21.0
+                parameters['cluster_width_after_rec'] = 50#75.0
                 parameters['cluster_lines_after_rec'] = 0
                 parameters['cluster_left_margin'] = 56.8
                 parameters['cluster_line_length'] = 500
                 parameters['custom_space_rules_rec'] = False
                 parameters['extra_cluster_line'] = False
-                parameters['yellow_shade_text'] = 0.95
+                parameters['yellow_shade_text'] = 0.97
                 parameters['packet_size_text'] = 15
+                parameters['text_total'] = 700
         
                 #Blank        
-                parameters['line_length'] = 100
+                parameters['line_length'] = 10
                 parameters['line_offset'] = 25.0
                 parameters['short_alignment'] = "center"
                 parameters['guard_init'] = 2

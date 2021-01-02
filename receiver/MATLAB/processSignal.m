@@ -19,6 +19,10 @@ if(type == "Blank")
            parameter.prelimit = 300;
            parameter.minH = 0.7;
            parameter.szbits = 26;
+           parameter.lofrec = 3500;
+           parameter.hifrec = 6000;
+           parameter.peakdis = 3;
+           parameter.env_window = 1000;
         case 2
            parameter.limitL1 = 10;
            parameter.limitL2 = 25;
@@ -30,6 +34,10 @@ if(type == "Blank")
            parameter.prelimit = 600;
            parameter.minH = 1.5;
            parameter.szbits = 28;
+           parameter.lofrec = 3500;
+           parameter.hifrec = 6000;
+           parameter.peakdis = 3;
+           parameter.env_window = 1000;
         case 3   
            parameter.limitL1 = 10;
            parameter.limitL2 = 35;
@@ -41,12 +49,31 @@ if(type == "Blank")
            parameter.prelimit = 500;
            parameter.minH = 1.5;
            parameter.szbits = 21;
+           parameter.lofrec = 3500;
+           parameter.hifrec = 6000;
+           parameter.peakdis = 3;
+           parameter.env_window = 1000;
+%{           
+        case 4   
+           parameter.limitL1 = 10;
+           parameter.limitL2 = 35;
+           parameter.limitH1 = 35;
+           parameter.limitH2 = 60;
+           parameter.limitI = 10;
+           parameter.printer_str = 'Canon20';
+           parameter.preminH = 450;
+           parameter.prelimit = 500;
+           parameter.minH = 1.5;
+           parameter.szbits = 21;
+           parameter.lofrec = 3500;
+           parameter.hifrec = 6000;
+           parameter.peakdis = 3;
+           parameter.env_window = 1000;
+%}
+           
     end
     
-    parameter.lofrec = 3500;
-    parameter.hifrec = 6000;
-    parameter.peakdis = 3;
-    parameter.env_window = 1000;
+    
     
 elseif(type == "Text")
     switch(class)
@@ -95,6 +122,23 @@ elseif(type == "Text")
            parameter.hifrec = 4000;
            parameter.lofrec = 3000;
            parameter.peakdis = 5;
+%{
+        case 4
+           parameter.limitL1 = 48;
+           parameter.limitL2 = 200;
+           parameter.limitH1 = 30;
+           parameter.limitH2 = 48;
+           parameter.hi_limit = 1;
+           parameter.printer_str = 'Canon6';
+           parameter.szbits = 7;
+           parameter.minH = 2.4;
+           parameter.preminH = 600;
+           parameter.env_window = 2500;
+           parameter.prelimit = 1000;
+           parameter.hifrec = 4000;
+           parameter.lofrec = 3000;
+           parameter.peakdis = 5;
+%}
     end
     
 end

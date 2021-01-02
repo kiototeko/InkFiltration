@@ -57,7 +57,7 @@ else
 	NUM_BITS=$(./testPrinter.py -i $PRINTER)
 fi
 
-FILE_BITS="${PRINTER}_${NUM_BITS}${NUM_PAGES}${TEXT}_bits"
+FILE_BITS="../receiver/MATLAB/payloads/${PRINTER}_${NUM_BITS}${NUM_PAGES}${TEXT}_bits"
 
 
 #if [ -n "$LOAD" ]; then
@@ -137,3 +137,5 @@ do
 	fi
 	FINAL=""
 done
+
+rm randomStream randomScript

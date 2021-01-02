@@ -1,6 +1,6 @@
 function peaks = obtainPeaksLocation(y,class, parameter, type, Fs, pre)
 
-    if(pre)
+    if(pre) %Loads the sample used to detect packet boundaries
         sample_variable = strcat('sampleC', num2str(class), type);
         load('samples.mat', sample_variable);
         overlap = 10000*12;

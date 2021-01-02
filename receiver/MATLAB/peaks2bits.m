@@ -14,12 +14,12 @@ if(type == "Blank")
     for n=1:length(locs_diff)
 
         sum_locs = sum_locs + locs_diff(n);
-        if preidx <= length(peaks_pre) && sum_locs > peaks_pre(preidx)
+        if preidx <= length(peaks_pre) && sum_locs > peaks_pre(preidx) %Determines packet boundaries
            limits(preidx) = idx;
            preidx = preidx + 1;
         end
 
-       if class == 1
+       if class == 1 %This series of conditions check for special circumstances
            if locs_diff(n) > 25 && locs_diff(n) < 26
                locs_diff(n+1) = locs_diff(n+1) + locs_diff(n);
                continue;
@@ -76,7 +76,7 @@ elseif(type == "Text")
 
     for n=1:length(locs_diff)
 
-       if preidx <= length(peaks_pre) && peaks(n) > peaks_pre(preidx)
+       if preidx <= length(peaks_pre) && peaks(n) > peaks_pre(preidx) %Determines packet boundaries and adds some extra bits
            bits(idx) = 1;
            idx = idx + 1;
            bits(idx) = -1;
