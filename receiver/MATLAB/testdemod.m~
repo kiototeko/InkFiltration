@@ -1,10 +1,4 @@
-%{
-testdemod.m - Program to test various parameters used at the receiving side
-to process the acoustic signals
-%}
-
-
-filename = "samples2/C4Blank3.wav"; %Filename to use
+filename = "samples2/C4Blank3.wav"; %"samples2/C4Blank3.wav"
 
 class_idx = regexp(filename, 'C[0-9]');
 class = str2double(filename{1}(class_idx+1));
@@ -16,23 +10,24 @@ elseif(contains(filename, "Text"))
     type = "Text";
 end
 
-%Load existing parameters, change according to whether you want to experiment with parameters here or load previous ones
-load_existing_param = 1; %0 or 1
+load_existing_param = 1; %Load existing parameters
 
 if(load_existing_param)
-    parameter = getParameter(class, type); %Get saved parameters
+    parameter = getParameter(class, type);
 else
     parameter = struct;
 end
 
+%Check if matched filter on frequency domain works
+
 if(~load_existing_param)
-    parameter.lofrec = 8000; %Lower cutoff frequency 
-    parameter.hifrec = 12000; %Upper cutoff frequency
-    parameter.env_window = 1000; %Sliding window for envelope function
+    parameter.lofrec = 8000; %8000; %Lower cutoff frequency 
+    parameter.hifrec = 12000; %12000; %Upper cutoff frequency
+    parameter.env_window = 1000; %sliding window for envelope function
 end
 
 
-[y, Fs] = audioread(filename); %Load audio file samples
+[y, Fs] = audioread(filename);
 info = audioinfo(filename); %Check for mono audio
 
 %Filter parameters
@@ -42,15 +37,15 @@ Rs = 60;
 n = 6;
 
 [b, c] = ellip(n,Rp,Rs,Wp);
-yband = filtfilt(b, c, y); %Filter the signal
+yband = filtfilt(b, c, y);
 
 
-[ff, ~] = envelope(yband, parameter.env_window, 'rms'); %Compute signal's envelope
+[ff, ~] = envelope(yband, parameter.env_window, 'rms'); %1000
 
 
-out = ff/sqrt(sum(abs(ff .^2)) / length(ff)); %Normalize
+out = ff/sqrt(sum(abs(ff .^2)) / length(ff));
 
-out = downsample(out, 1000); %Downsample
+out = downsample(out, 1000);
 
 figure
 plot(out)
@@ -80,8 +75,7 @@ if(~load_existing_param)
     parameter.peakdis = 3; %Minimun distance between peaks
 end
 
-[~, p] = findpeaks(out,'MinPeakHeight', parameter.minH, 'MinPeakDistance', parameter.peakdis); %Find all peaks
-
+[~, p] = findpeaks(out,'MinPeakHeight', parameter.minH, 'MinPeakDistance', parameter.peakdis);
 figure
 findpeaks(out,'MinPeakHeight', parameter.minH, 'MinPeakDistance', parameter.peakdis);
 
@@ -98,10 +92,10 @@ between limitL1 and limitL2, while bit 1 time difference would be between limitH
 %}
 
 if(~load_existing_param)
-    parameter.limitL1 = 15; %inclusive lower limit of bit 0
-    parameter.limitL2 = 40; %exclusive upper limit of bit 0
-    parameter.limitH1 = 40; %inclusive lower limit of bit 1
-    parameter.limitH2 = 150; %exclusive upper limit of bit 1
+    parameter.limitL1 = 15; %inclusive lower limit of first bit 
+    parameter.limitL2 = 40; %exclusive upper limit of first bit
+    parameter.limitH1 = 40; %inclusive lower limit of second bit
+    parameter.limitH2 = 150; %exclusive upper limit of second bit
     
     parameter.limitI = 5; %used to ignore all time differences below that value
     
@@ -109,11 +103,13 @@ if(~load_existing_param)
 end
 
 
+
+text = 1;
 idx = 1;
 bits = [];
 
 
-if(strcmp(type, "Text")) %This for loop should only be used for FPM-DPPM (text pages)
+if(text) %This for loop should only be used for FPM-DPPM (text pages)
     num_hi = 0;
     num_lo = 0;
     first_hi = 1;
@@ -139,7 +135,7 @@ if(strcmp(type, "Text")) %This for loop should only be used for FPM-DPPM (text p
        end
     end
     
-elseif(strcmp(type, "Blank")) %This for loop should only be used for DPPM (blank pages)
+else %This for loop should only be used for DPPM (blank pages)
     
     for n=1:length(locs_diff)
            if locs_diff(n)  < parameter.limitL2 && locs_diff(n) >= parameter.limitL1 
@@ -164,7 +160,7 @@ the printer, this patterns may need of extended processing. You can check
 peaks2bits.m script to see and example of this.
 %}
 
-%% Preamble processing (Work in progress)
+%% Preamble processing
 
 %{
 As part of the signal processing, a matched filter is first used to detect
@@ -194,7 +190,7 @@ if(~load_existing_param)
 end
 
 [c,lags] = xcorr(out,sample);
-p = lags(c > parameter.preminH);
+p = lags(c > preminH);
 
 figure
 plot(lags,c)
@@ -206,7 +202,7 @@ peaks = [];
 %cross-correlation peaks
 
 for i = 1:length(p)
-    if idx == 1 || (idx > 1 && p(i) - peaks(idx-1) > parameter.prelimit)
+    if idx == 1 || (idx > 1 && p(i) - peaks(idx-1) > prelimit)
         peaks(idx) = p(i);
         idx = idx + 1;
     end

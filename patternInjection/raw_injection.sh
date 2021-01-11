@@ -3,7 +3,7 @@
 if [ "$#" -lt 2 ]; then
 	echo "Wrong number of paramenters. Usage: raw_injection.sh [options] printer bit_pattern"
 	echo "Use this function to inject a specified bit pattern of any size into a pdf document according to a specific printer"
-	echo -e "Current defined printers: $(./testPrinter.py -l)"
+	echo -e "Current defined printers: $(python3 ./testPrinter.py -l)"
 	echo -e "Options:\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)\n -b : Make less black the text on a document"
 	exit 1
 fi
@@ -57,14 +57,14 @@ echo -e "modify stream $AKA3 randomStream\nsave" > randomScript
 echo -e "\nSUCCESSFUL INJECTION (testPDF.pdf)----------------\n"
 
 if [ -z "$TEXT" ]; then
-		./testPrinter.py -rp $FINAL $PRINTER > randomStream
+		python3 ./testPrinter.py -rp $FINAL $PRINTER > randomStream
 		cat randomStream
 
 else
         AKA3=$($PEEPDF -C "object ${array[0]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
         STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
 
-	./testPrinter.py -rt -p $FINAL $PRINTER > randomStream
+	python3 ./testPrinter.py -rt -p $FINAL $PRINTER > randomStream
 	cat randomStream
 
 	if [ -n "$LESS_BLACK" ] || [ $PRINTER = "Epson_L4150" ] || [ $PRINTER = "Canon_MG2410" ]; then

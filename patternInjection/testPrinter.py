@@ -2,6 +2,11 @@
 
 import sys, getopt, math
 
+"""
+import numpy as np
+from os import environ
+import cv2
+"""
         
 def blank(parameters, packet):
         global total, max_length
@@ -216,18 +221,18 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = False
                 
                 #Text
-                parameters['rec_width'] = 40 #minimum 25
-                parameters['cluster_width'] = 50.0
-                parameters['cluster_lines'] = 0
-                parameters['cluster_width_after_rec'] = 50#75.0
+                parameters['rec_width'] = 25 #minimum 25
+                parameters['cluster_width'] = 45#45.0 #50.0
+                parameters['cluster_lines'] = 3
+                parameters['cluster_width_after_rec'] = 50#50#75.0
                 parameters['cluster_lines_after_rec'] = 0
-                parameters['cluster_left_margin'] = 56.8
-                parameters['cluster_line_length'] = 500
+                parameters['cluster_left_margin'] = 9#56.8
+                parameters['cluster_line_length'] = 594#500
                 parameters['custom_space_rules_rec'] = False
                 parameters['extra_cluster_line'] = False
-                parameters['yellow_shade_text'] = 0.97
+                parameters['yellow_shade_text'] = 0.98 
                 parameters['packet_size_text'] = 15
-                parameters['text_total'] = 700
+                #parameters['text_total'] = 700
         
                 #Blank        
                 parameters['line_length'] = 10
@@ -382,9 +387,19 @@ else:
 print("f\nQ\n")
 
 
+"""
+environ["QT_DEVICE_PIXEL_RATIO"] = "0"
+environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+environ["QT_SCALE_FACTOR"] = "1"
 
+array_created = np.full((total, 603, 3), 255, dtype = np.uint8) 
 
-
+array_created[1,:,:] = 50
+cv2.imshow("image", array_created)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+"""
 
 
 
