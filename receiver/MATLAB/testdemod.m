@@ -164,20 +164,24 @@ the printer, this patterns may need of extended processing. You can check
 peaks2bits.m script to see and example of this.
 %}
 
-%% Preamble processing (Work in progress)
+%% Preamble processing
 
 %{
 As part of the signal processing, a matched filter is first used to detect
 the boundaries of the packet. This process utilizes a saved sample 
 which is cross-correlated with the signal.
 
-An example of saved samples can be shown by loading the samples.mat file:
-
-load("samples.mat").
-
 %}
 
-sample = out(113:177); 
+%An example of saved samples can be shown by loading the samples.mat file:
+
+sample_name = strcat("sampleC", string(class), type);
+
+load("samples.mat", sample_name);
+
+sample = eval(sample_name);
+
+%sample = out(113:177); 
 
 %{
 By visual inspection of the waveform, we determine this section to be a 
@@ -190,7 +194,7 @@ save("samples.mat", 'sample','-append')
 
 if(~load_existing_param)
     parameter.preminH = 80; %The peaks to consider in the cross-correlation should be filtered by a minimum value
-    parameter.prelimit = 500;
+    parameter.prelimit = 500; %The separation between these peaks
 end
 
 [c,lags] = xcorr(out,sample);
