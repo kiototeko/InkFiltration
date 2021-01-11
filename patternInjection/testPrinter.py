@@ -1,12 +1,19 @@
 #!/usr/bin/env python
 
 import sys, getopt, math
-
-"""
 import numpy as np
-from os import environ
-import cv2
-"""
+
+image_array = np.full((790, 612, 3), 255, dtype = np.uint8) 
+        
+def add_shape(x, y, width, height):
+    global image_array
+    
+    print("%.2f %.2f %i %i re" %(x, y, width, height))
+    
+    if(y > 0):
+        y_index = int(round(800-y))
+        x = int(x)
+        image_array[y_index-int(height):y_index, x:x+int(width),:] = (0,200,255)
         
 def blank(parameters, packet):
         global total, max_length
@@ -31,20 +38,20 @@ def blank(parameters, packet):
         
         if(guard_init > 0):
                 for i in range(guard_init):
-                        print("9 %.2f %i 1 re" %(total, max_length))
+                        add_shape(9, total, max_length, 1)
                         total -= offset
                 
         for bitidx in packet:
 
                 if(not int(bitidx)):
-                                print("%i %.2f %i 1 re" %(left_margin, total, length))
+                                add_shape(left_margin, total, length, 1)
                 else:
-                        print("9 %.2f %i 1 re" %(total, max_length))
+                        add_shape(9, total, max_length, 1)
                 
                 total -= offset
                 
         if(parameters['guard_end']):
-                print("9 %.2f %i 1 re" %(total, max_length)) #A final "guard" line is added so as to make sure the last time offset falls between individual roller pulses and not with respect to the random noises that the printer makes when it finishes printing a page
+                add_shape(9, total, max_length, 1)#A final "guard" line is added so as to make sure the last time offset falls between individual roller pulses and not with respect to the random noises that the printer makes when it finishes printing a page
         
 def text(parameters, packet):
         global total, max_length
@@ -66,20 +73,20 @@ def text(parameters, packet):
         for j,bitidx in enumerate(packet):
 
                 if(not int(bitidx)):
-                        print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))
+                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
                         total -= cluster_width/(cluster_lines+1)
                         for i in range(cluster_lines):
-                                print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))
+                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
                                 total -= cluster_width/(cluster_lines+1)
                         
                         if(extra_cluster_line):
                                 if(j > 0 and not int(packet[j-1])): #An extra line is drawn when a cluster of lines precedes the actual cluster of lines, e.g., bit sequence 0-0
-                                        print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))
+                                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
                                         total -= cluster_width/(cluster_lines+1)
                 else:
 
                         total -= rec_width
-                        print("9 %.2f 594 %.2f re" %(total, rec_width))
+                        add_shape(9, total, 594, rec_width)
                         
                         cluster_width_after_rec_tmp = cluster_width_after_rec
                         
@@ -91,13 +98,13 @@ def text(parameters, packet):
                        
                         total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec+1)
                         for i in range(cluster_lines_after_rec):
-                                        print("%.2f %.2f %i 1 re" %(cluster_left_margin, total, cluster_line_length))           
+                                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
                                         total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec+1)
 
                 
         total -= rec_width
         if(parameters['guard_end']):
-                print("9 %.2f %i %.2f re" %(total, max_length, rec_width))
+                add_shape(9, total, max_length, rec_width)
         
 def SweepOffset(parameters):
         global total
@@ -108,7 +115,7 @@ def SweepOffset(parameters):
 
         while total > lower_margin:
         
-                print("9 %.2f 594 1 re" %(total))
+                add_shape(9, total, 594, 1)
                 total -= offset
                 offset += 2
                 
@@ -125,7 +132,7 @@ def SweepLength(parameters):
                 total -= offset
 
         for i in range(packet_size):
-                print("%.2f %.2f %.2f 1 re" %(start, total, line_size))
+                add_shape(start, total, line_size, 1)
                 total -= offset
                 line_size -= line_decrement
 
@@ -287,6 +294,7 @@ def get_parity_bit(pattern):
 textmod = False
 raw_mode = False
 info_bits = False
+show_image = False
 printer_name_list = ['Canon_MG2410', 'Epson_L4150', 'HP_Photosmart_D110', 'HP_Deskjet_1115'] #Add your printer name here
 
 if len(sys.argv) < 2:
@@ -322,7 +330,7 @@ pattern = "1110001010111001001011010010111001001001" #Bit sequence example
 preamble = "1010" #Preamble to all packets
 max_length = 594 #Maximum line length with respect to the width of the page and its margins
 
-opts, args = getopt.getopt(sys.argv[1:], "Ssitrp:")
+opts, args = getopt.getopt(sys.argv[1:], "SsiItrp:")
 for opt, arg in opts:
         if opt == '-t':
                 textmod = True
@@ -332,6 +340,8 @@ for opt, arg in opts:
                 raw_mode = True
         elif opt == '-i':
                 info_bits = True
+        elif opt == '-I':
+                show_image = True
         elif opt == '-s':
                 yellow_shade = parameters['yellow_shade_blank']
                 print("q\n1.0 1.0", yellow_shade, "rg")
@@ -387,19 +397,27 @@ else:
 print("f\nQ\n")
 
 
-"""
-environ["QT_DEVICE_PIXEL_RATIO"] = "0"
-environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-environ["QT_SCREEN_SCALE_FACTORS"] = "1"
-environ["QT_SCALE_FACTOR"] = "1"
 
-array_created = np.full((total, 603, 3), 255, dtype = np.uint8) 
 
-array_created[1,:,:] = 50
-cv2.imshow("image", array_created)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-"""
+if(show_image):
+
+    
+    from os import environ
+    import cv2
+
+    environ["QT_DEVICE_PIXEL_RATIO"] = "0"
+    environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+    environ["QT_SCALE_FACTOR"] = "1"
+
+    cv2.imshow("Pattern", image_array)
+    
+    while True:
+        key = cv2.waitKey(1)
+        if key > 0:
+            break
+    cv2.destroyAllWindows()
+
 
 
 
