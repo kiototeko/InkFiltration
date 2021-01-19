@@ -8,7 +8,7 @@ to process the acoustic signals
 
 load_existing_param = 0; %0 or 1
 
-filename = "samples2/C4TextNewRec323.wav"; %Filename to use
+filename = "samples2/C4TextBlank3.wav"; %Filename to use
 
 class_idx = regexp(filename, 'C[0-9]');
 class = str2double(filename{1}(class_idx+1));
@@ -81,8 +81,13 @@ if(~load_existing_param)
 end
 
 
-%This code section is part of obtainPeaksLocation.m
-%A similar call could be peaks = obtainPeaksLocation(y, 0, parameter, type, Fs, 0);
+%{
+This code section is part of obtainPeaksLocation.m
+A similar call could be peaks = obtainPeaksLocation(y, 0, parameter, type, Fs, 0);
+
+Basically, in this part we are processing the signal exactly as in the previous part, but using windows of a certian size.
+Then, we extract the peaks and compute the difference in time between them.
+%}
 
 
 parameter2 = parameter;

@@ -17,13 +17,19 @@ To download with the submodules use the next command: `git clone --recurse-submo
   - You will need both python 2 and 3, as python 2 is used with peepdf
   - pip install *opencv-python* and *numpy* if you want image functionality
 
+## How to obtain the results shown in the paper
+
+1. Download all the samples [here](https://drive.google.com/file/d/1i4jgTm4fGE4vT6IUTMaa1_sHq3aUKbgj/view?usp=sharing). 
+
+2. Run the MATLAB script *receiver/MATLAB/test.m*
+  
 ## Procedure to add a new printer
 
 ### Trying existing parameters
 
 - First of all, to add a new printer, you could try to test if the existing parameters defined for other printers work with it. For that you may print a page using one of these set of parameters and record the sounds for both the case were you have a blank page and were you have a page with text.
 
-  - Use the next command to create a blank page with modulation for a desired printer (e.g. for an HP printer): `./randomBits.sh HP_Photosmart_D110 1`
+  - The program *patternInjection/randomBits.sh* is useful in this case. The next command to create a blank page with modulation for a desired printer (e.g. for an HP printer): `./randomBits.sh HP_Photosmart_D110 1`
 
   - Or to create a text page with modulation, you can use one of the layouts in the Layouts directory: `./randomBits.sh -tf Layouts/simpleLayoutArial.pdf HP_Photosmart_D110 1`
 
@@ -68,12 +74,12 @@ To download with the submodules use the next command: `git clone --recurse-submo
 #### Testing algorithm for FPM-DPPM (text pages):
 
 1. Open the *patternInjection/testPrinter.py* file and go to the definition of the *printer_parameters* function, which contains all pertinent parameters. 
-  - You may want to start with a relatively large rectangle width (*rec_width* of maybe **50** or **100**) and print a bit sequence like **101010** and see if a frequency change occurs. You should also try this procedure with a not so light yellow shade (*yellow_shade_text* of **0.9** or less). 
-  - After this you should try to reduce the rectangle width to its minimum. For this point it is recommended to use the blank file *Layouts/whitePages.pdf*, example: `./raw_injection.sh -tf Layouts/whitePages.pdf HP_Deskjet_1115 "101010101010"`
+   - You may want to start with a relatively large rectangle width (*rec_width* of maybe **50** or **100**) and print a bit sequence like **101010** and see if a frequency change occurs. You should also try this procedure with a not so light yellow shade (*yellow_shade_text* of **0.9** or less). 
+   - After this you should try to reduce the rectangle width to its minimum. For this point it is recommended to use the blank file *Layouts/whitePages.pdf*, example: `./raw_injection.sh -tf Layouts/whitePages.pdf HP_Deskjet_1115 "101010101010"`
 
 2. Because this type of modulation is supposed to be used with text documents, and blank documents might produce other behaviours, if somehow the previous procedure didn't produce any change, don't worry. Either way you should now try with a text document. You may repeat the above procedure again. 
    - You can start by printing a pattern like **11111** and see if there is small frequency change between rectangle printing. If you only hear a constant roller frequency that may mean that the spacing between rectangles is not enough. To modify this spacing, you should try to use both the *cluster_width_after_rec* and *cluster_lines_after_rec* parameters, which modify both the space after rectangles and the number of lines to insert as a buffer. You should note that inserting too many lines as buffer might be counterproductive, maybe start with **0** as the value for that parameter. There should be a least a sound pulse between rectangle sounds so as to ascertain the separation between rectangles. 
    - After these parameters are found, you should now test with a pattern like **101010** and make sure that a zero corresponds at least with two pulses (in contrast to one pulse that serves as separation between rectangles), by modifying the *cluster_width* and *cluster_lines* parameters that modify the space allocated to zeroes and the number of buffer lines used, respectively. 
    - Finally, you should test to see that a pattern like **0000** works. There is a trick you can do so as to lower the blackness of the text in the document and enhance the potential of the patterns by specifying the -b flag while using the *patternInjection/raw_injection.sh* program. Another trick you can use is to reduce the length of the cluster lines so as to make them encompass only the same space as the text in the document, by modifying the *cluster_left_margin* and *cluster_line_length* parameters (by using **56.8** and **500** as values respectively, for example).
 
-3. Once you can achieve the same frequency effect with text documents, you may want to add cluster lines and test the modulation in text documents with blank gaps in them, to see if it is robust to those spacings (you may also want to test it again on a blank page). Now, at this point you may want to make sure the next patterns are also handled well: **111**, **000**, and derived variations. At this point you may need further parameter adjustment by utilizing both the *cluster_width_after_rec* and *cluster_lines_after_rec* parameters, which are bit sequence dependent. The first one modifies the buffer cluster lines introduced after every rectangle and the second one modifies the number of lines in this cluster. This is important specially when you have continous rectangles, as each of this should be separated by a cluster of lines to ensure they produce independent sounds. For this part you may already want to use the MATLAB scripts to find the time offset between pulses and analyze the waveform. There is also *custom_space_rules_rec* parameter which gives you a finer control on the space following a rectangle and the *extra_cluster_line* parameter for controlling the space following a cluster of lines.
+3. For the previous steps you may already want to use the MATLAB *receiver/MATLAB/testdemod.m* script to find the time offset between pulses and analyze the waveforms. You could also experiment with *custom_space_rules_rec* parameter which gives you a finer control on the space following a rectangle and the *extra_cluster_line* parameter for controlling the space following a cluster of lines.
