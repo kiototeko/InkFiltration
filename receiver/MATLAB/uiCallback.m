@@ -13,7 +13,7 @@ function uiCallback(src, ~)
             end
         end
     elseif(strcmp(src.Tag, 'lofrec'))
-        if(src.Value < src.Parent.UserData.hifrec && src.Value > 0)
+        if(src.Value < src.Parent.UserData.hifrec)
             src.Parent.UserData.lofrec = src.Value;
             for i=1:length(src.Parent.Children)
                 if(strcmp(src.Parent.Children(i).Tag, 'lofrec_str'))
@@ -22,12 +22,10 @@ function uiCallback(src, ~)
             end
         end
     elseif(strcmp(src.Tag, 'env_window'))
-        if(int32(src.Value) > 0)
-            src.Parent.UserData.env_window = int32(src.Value);
-            for i=1:length(src.Parent.Children)
-                if(strcmp(src.Parent.Children(i).Tag, 'env_window_str'))
-                    src.Parent.Children(i).String = strcat('Smoothing window size: ', string(int32(src.Value)));
-                end
+        src.Parent.UserData.env_window = int32(src.Value);
+        for i=1:length(src.Parent.Children)
+            if(strcmp(src.Parent.Children(i).Tag, 'env_window_str'))
+                src.Parent.Children(i).String = strcat('Smoothing window size: ', string(int32(src.Value)));
             end
         end
     elseif(strcmp(src.Tag, 'minH'))
