@@ -21,7 +21,9 @@ To download with the submodules use the next command: `git clone --recurse-submo
 
 1. Download all the samples [here](https://drive.google.com/file/d/1i4jgTm4fGE4vT6IUTMaa1_sHq3aUKbgj/view?usp=sharing). 
 
-2. Run the MATLAB script *receiver/MATLAB/test.m*
+2. Extract the samples on *receiver/MATLAB/samples2/*
+
+3. Run the MATLAB script *receiver/MATLAB/test.m*
   
 ## Procedure to add a new printer
 
