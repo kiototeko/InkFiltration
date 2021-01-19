@@ -4,7 +4,11 @@ to process the acoustic signals
 %}
 
 
-filename = "samples2/C4Blank3.wav"; %Filename to use
+%Load existing parameters, change according to whether you want to experiment with parameters here or load previous ones
+
+load_existing_param = 0; %0 or 1
+
+filename = "samples2/C4TextNewRec323.wav"; %Filename to use
 
 class_idx = regexp(filename, 'C[0-9]');
 class = str2double(filename{1}(class_idx+1));
@@ -16,9 +20,6 @@ elseif(contains(filename, "Text"))
     type = "Text";
 end
 
-%Load existing parameters, change according to whether you want to experiment with parameters here or load previous ones
-load_existing_param = 1; %0 or 1
-
 if(load_existing_param)
     parameter = getParameter(class, type); %Get saved parameters
 else
@@ -26,8 +27,8 @@ else
 end
 
 if(~load_existing_param)
-    parameter.lofrec = 8000; %Lower cutoff frequency 
-    parameter.hifrec = 12000; %Upper cutoff frequency
+    parameter.lofrec = 13000; %11000; %Lower cutoff frequency 
+    parameter.hifrec = 15000;%15000; %Upper cutoff frequency
     parameter.env_window = 1000; %Sliding window for envelope function
 end
 
@@ -43,8 +44,6 @@ n = 6;
 
 [b, c] = ellip(n,Rp,Rs,Wp);
 yband = filtfilt(b, c, y); %Filter the signal
-
-
 [ff, ~] = envelope(yband, parameter.env_window, 'rms'); %Compute signal's envelope
 
 
@@ -53,7 +52,8 @@ out = ff/sqrt(sum(abs(ff .^2)) / length(ff)); %Normalize
 out = downsample(out, 1000); %Downsample
 
 figure
-plot(out)
+plot((1:length(out))*1000/Fs,out)
+xlabel('Time(s)')
 
 %{
 %% Frequency domain
@@ -71,7 +71,7 @@ plot(f, powerhi);
 %% Spectrogram of signal
 
 figure
-spectrogram(y,256,250,[],Fs, 'yaxis')
+spectrogram(y,2560,2500,[],Fs, 'yaxis')
 
 %% Signal peaks
 
@@ -80,12 +80,42 @@ if(~load_existing_param)
     parameter.peakdis = 3; %Minimun distance between peaks
 end
 
-[~, p] = findpeaks(out,'MinPeakHeight', parameter.minH, 'MinPeakDistance', parameter.peakdis); %Find all peaks
 
-figure
-findpeaks(out,'MinPeakHeight', parameter.minH, 'MinPeakDistance', parameter.peakdis);
+%This code section is part of obtainPeaksLocation.m
+%A similar call could be peaks = obtainPeaksLocation(y, 0, parameter, type, Fs, 0);
 
-locs_diff = diff(p)' %This variable will contain all the time differences between peaks
+
+parameter2 = parameter;
+parameter2.y = y;
+parameter2.out = out;
+parameter2.Fs = Fs;
+
+
+
+scanParameters = figure;
+
+
+scanParameters.UserData = parameter2;
+uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.3 0.9 0.04], 'String', strcat('High frequency: ',string(parameter.hifrec), ' Hz'), 'Tag','hifrec_str');
+uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.28 0.9 0.025], 'Max', 20000, 'Tag', 'hifrec', 'Value', parameter.hifrec, 'sliderstep',[0.005 0.01], 'Callback', @uiCallback);
+uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.23 0.9 0.04], 'String', strcat('Low frequency: ',string(parameter.lofrec), ' Hz'), 'Tag','lofrec_str');
+uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.21 0.9 0.025], 'Max', 20000, 'Tag', 'lofrec', 'Value', parameter.lofrec, 'sliderstep',[0.005 0.01], 'Callback', @uiCallback);
+uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.15 0.9 0.04], 'String', strcat('Smoothing window size: ', string(parameter.env_window)), 'Tag','env_window_str');
+uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.13 0.9 0.025], 'Max', 20000, 'Tag', 'env_window', 'Value', parameter.env_window, 'sliderstep',[0.001 0.01], 'Callback', @uiCallback);
+uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.08 0.9 0.04], 'String', strcat('Minimum peak height: ', string(parameter.minH)), 'Tag','minH_str');
+uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.06 0.9 0.025], 'Max', 5, 'Tag', 'minH', 'Value', parameter.minH, 'sliderstep',[0.005 0.01], 'Callback', @uiCallback);
+
+
+peaks = plot_process_signal(parameter2);
+
+%WARNING: peaks variable is not updated when you change the parameters in the
+%figure controls. Whenever you find the correct parameters change them
+%above this code.
+
+peaks %Peaks location
+locs_diff = diff(peaks) %This variable will contain all the time differences between peaks
+ 
+
 
 %% Bits processing
 
@@ -98,14 +128,14 @@ between limitL1 and limitL2, while bit 1 time difference would be between limitH
 %}
 
 if(~load_existing_param)
-    parameter.limitL1 = 15; %inclusive lower limit of bit 0
-    parameter.limitL2 = 40; %exclusive upper limit of bit 0
-    parameter.limitH1 = 40; %inclusive lower limit of bit 1
-    parameter.limitH2 = 150; %exclusive upper limit of bit 1
+    parameter.limitL1 = 19; %inclusive lower limit of bit 0
+    parameter.limitL2 = 50; %exclusive upper limit of bit 0
+    parameter.limitH1 = 6; %inclusive lower limit of bit 1
+    parameter.limitH2 = 19; %exclusive upper limit of bit 1
     
     parameter.limitI = 5; %used to ignore all time differences below that value
     
-    parameter.hi_limit = 1; %used to determine how many time differences between limitH1 and limitH2 to consider as bit 1 (FPM-DPPM)
+    parameter.hi_limit = 3; %used to determine how many time differences between limitH1 and limitH2 to consider as bit 1 (FPM-DPPM)
 end
 
 

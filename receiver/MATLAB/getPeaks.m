@@ -1,4 +1,4 @@
-function p = getPeaks(y, minH, window, lofrec, hifrec, peakdis)
+function [p,out] = getPeaks(y, minH, window, lofrec, hifrec, peakdis)
 
 Wp = [lofrec hifrec]/(44100/2);
 Rp = 0.1;
@@ -14,5 +14,6 @@ out = ff/sqrt(sum(abs(ff .^2)) / length(ff));
 
 out = downsample(out, 1000);
 [~, p] = findpeaks(out,'MinPeakHeight', minH, 'MinPeakDistance', peakdis);
+%figure
 %findpeaks(out,'MinPeakHeight', minH, 'MinPeakDistance', peakdis);
 end

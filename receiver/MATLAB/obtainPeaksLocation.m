@@ -35,6 +35,7 @@ function peaks = obtainPeaksLocation(y,class, parameter, type, Fs, pre)
        
         locs = locs+(n-1)*(window-overlap)/1000;
 
+        
         for i = 1:length(locs)
             if(pre)
                 if idx == 1 || (idx > 1 && locs(i) - peaks(idx-1) > parameter.prelimit)
@@ -48,5 +49,6 @@ function peaks = obtainPeaksLocation(y,class, parameter, type, Fs, pre)
                 end
             end
         end
+
     end
 end
