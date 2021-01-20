@@ -27,9 +27,9 @@ else
 end
 
 if(~load_existing_param)
-    parameter.lofrec = 13000; %11000; %Lower cutoff frequency 
-    parameter.hifrec = 15000;%15000; %Upper cutoff frequency
-    parameter.env_window = 1000; %Sliding window for envelope function
+    parameter.lofrec = 5500; %11000; %Lower cutoff frequency 
+    parameter.hifrec = 7000;%15000; %Upper cutoff frequency
+    parameter.env_window = 1031; %Sliding window for envelope function
 end
 
 
@@ -76,7 +76,7 @@ spectrogram(y,2560,2500,[],Fs, 'yaxis')
 %% Signal peaks
 
 if(~load_existing_param)
-    parameter.minH = 1.7; %Minimum peak height to consider
+    parameter.minH = 1.3; %Minimum peak height to consider
     parameter.peakdis = 3; %Minimun distance between peaks
 end
 
@@ -106,7 +106,7 @@ uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Pos
 uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.23 0.9 0.04], 'String', strcat('Low frequency: ',string(parameter.lofrec), ' Hz'), 'Tag','lofrec_str');
 uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.21 0.9 0.025], 'Max', 20000, 'Min', 1, 'Tag', 'lofrec', 'Value', parameter.lofrec, 'sliderstep',[0.005 0.01], 'Callback', @uiCallback);
 uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.15 0.9 0.04], 'String', strcat('Smoothing window size: ', string(parameter.env_window)), 'Tag','env_window_str');
-uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.13 0.9 0.025], 'Max', 20000, 'Min', 1, 'Tag', 'env_window', 'Value', parameter.env_window, 'sliderstep',[0.001 0.01], 'Callback', @uiCallback);
+uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.13 0.9 0.025], 'Max', 10000, 'Min', 1, 'Tag', 'env_window', 'Value', parameter.env_window, 'sliderstep',[0.001 0.01], 'Callback', @uiCallback);
 uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.08 0.9 0.04], 'String', strcat('Minimum peak height: ', string(parameter.minH)), 'Tag','minH_str');
 uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.06 0.9 0.025], 'Max', 5, 'Tag', 'minH', 'Value', parameter.minH, 'sliderstep',[0.005 0.01], 'Callback', @uiCallback);
 

@@ -18,12 +18,21 @@ remnant = zeros(window,1);
 
 for n = 1:num
     lowerBound = (n-1)*(window-overlap)+1;
-    if(lowerBound + window > length(parameter.y))
-        remnant(1:length(parameter.y)-lowerBound+1) = parameter.y(lowerBound:length(parameter.y));
-        [locs,out2] = getPeaks(remnant,parameter.minH, parameter.env_window, parameter.lofrec,parameter.hifrec,parameter.peakdis);
-      
-    else
-        [locs,out2] = getPeaks(parameter.y(lowerBound:n*window-overlap*(n-1)), parameter.minH, parameter.env_window, parameter.lofrec,parameter.hifrec,parameter.peakdis);
+    
+    try
+        if(lowerBound + window > length(parameter.y))
+            remnant(1:length(parameter.y)-lowerBound+1) = parameter.y(lowerBound:length(parameter.y));
+            [locs,out2] = getPeaks(remnant,parameter.minH, parameter.env_window, parameter.lofrec,parameter.hifrec,parameter.peakdis);
+
+        else
+            [locs,out2] = getPeaks(parameter.y(lowerBound:n*window-overlap*(n-1)), parameter.minH, parameter.env_window, parameter.lofrec,parameter.hifrec,parameter.peakdis);
+        end
+        
+    catch
+        warning('Filtering error');
+        plot(0);
+        legend("");
+        return
     end
     
     plot((1:length(out2))+(n-1)*(window-overlap)/1000, out2, '-o','MarkerIndices',locs) %In this plot, each color graph corresponds to one time window (which are overlapped)
