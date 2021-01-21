@@ -58,13 +58,23 @@ def text(parameters, packet):
         rec_width = parameters['rec_width'] #Rectangle width
         cluster_width = parameters['cluster_width']  #Cluster of lines total width
         cluster_lines = parameters['cluster_lines'] #Number of cluster lines
-        cluster_width_after_rec = parameters['cluster_width_after_rec'] #Cluster of lines total width after a rectangle is drawn (special case)
-        cluster_lines_after_rec = parameters['cluster_lines_after_rec'] #Number of cluster lines after a rectangle is drawn (special case)
         cluster_left_margin = parameters['cluster_left_margin'] #Cluster of lines left margin
         cluster_line_length = parameters['cluster_line_length'] #Cluster of lines length
         
         custom_space_rules_rec = parameters['custom_space_rules_rec'] #If you need more control over spacing when dealing with different bit sequences
+        
+        if(custom_space_rules_rec):
+                cluster_width_after_rec_before_cluster = parameters['cluster_width_after_rec_before_cluster']
+                cluster_width_after_rec_before_rec = parameters['cluster_width_after_rec_before_rec']
+                cluster_lines_after_rec_before_cluster = parameters['cluster_lines_after_rec_before_cluster']
+                cluster_lines_after_rec_before_rec = parameters['cluster_lines_after_rec_before_rec']
+        else:
+                cluster_width_after_rec = parameters['cluster_width_after_rec'] #Cluster of lines total width after a rectangle is drawn (special case)
+                cluster_lines_after_rec = parameters['cluster_lines_after_rec'] #Number of cluster lines after a rectangle is drawn (special case)
+                
         extra_cluster_line = parameters['extra_cluster_line'] #If you need to add an extra line in some conditions
+        
+        asymmetric_lines_after_rec = parameters['asymmetric_lines_after_rec'] #If you don't want the lines after a rectangle to be symmetrical in space
 
 
         if('text_total' in parameters):
@@ -88,18 +98,37 @@ def text(parameters, packet):
                         total -= rec_width
                         add_shape(9, total, 594, rec_width)
                         
-                        cluster_width_after_rec_tmp = cluster_width_after_rec
+                        
                         
                         if(custom_space_rules_rec):
-                                if(j + 1 < len(packet)-1 and not int(packet[j+1])): #Space is modified according to whether a rectangle follows another rectangle or a cluster of lines follow a rectangle, e.g., bit sequence 1-1 or 1-0 respectively
-                                        cluster_width_after_rec_tmp += 2
-                                else:
-                                        cluster_width_after_rec_tmp += 10
+                            
+                                #Space is modified according to whether a rectangle follows another rectangle or a cluster of lines follow a rectangle, e.g., bit sequence 1-1 or 1-0 respectively
+                                
+                                if(j + 1 < len(packet)-1 and not int(packet[j+1])): #Cluster of lines follows rectangle
+                                  
+                                        cluster_width_after_rec_tmp = cluster_width_after_rec_before_cluster
+                                        cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_cluster
+                                        
+                                else: #Rectangle follows rectangle
+      
+                                        cluster_width_after_rec_tmp = cluster_width_after_rec_before_rec
+                                        cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_rec
+                        else:
+                            
+                                cluster_width_after_rec_tmp = cluster_width_after_rec
+                                cluster_lines_after_rec_tmp = cluster_lines_after_rec
                        
-                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec+1)
-                        for i in range(cluster_lines_after_rec):
+                        if(asymmetric_lines_after_rec and j + 1 < len(packet)-1 and int(packet[j+1])):
+                                total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+2)
+                                for i in range(cluster_lines_after_rec_tmp+1):
+                                        if(i == 1):
+                                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+2)
+                        else:
+                                total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
+                                for i in range(cluster_lines_after_rec_tmp):
                                         add_shape(cluster_left_margin, total, cluster_line_length, 1)
-                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec+1)
+                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
 
                 
         total -= rec_width
@@ -160,6 +189,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['cluster_left_margin'] = 9
                 parameters['cluster_line_length'] = 594
                 parameters['custom_space_rules_rec'] = False
+                parameters['asymmetric_lines_after_rec'] = False
                 parameters['extra_cluster_line'] = True
                 parameters['yellow_shade_text'] = 0.94
                 parameters['packet_size_text'] = 11
@@ -186,6 +216,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['cluster_left_margin'] = 56.8
                 parameters['cluster_line_length'] = 500
                 parameters['custom_space_rules_rec'] = False
+                parameters['asymmetric_lines_after_rec'] = False
                 parameters['extra_cluster_line'] = False
                 parameters['yellow_shade_text'] = 0.99
                 parameters['packet_size_text'] = 12
@@ -206,14 +237,19 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['rec_width'] = 25.0
                 parameters['cluster_width'] = 32.0
                 parameters['cluster_lines'] = 10
-                parameters['cluster_width_after_rec'] = 21.0
-                parameters['cluster_lines_after_rec'] = 5
+                #parameters['cluster_width_after_rec'] = 21.0
+                #parameters['cluster_lines_after_rec'] = 5
                 parameters['cluster_left_margin'] = 9
                 parameters['cluster_line_length'] = 594
-                parameters['custom_space_rules_rec'] = True
                 parameters['extra_cluster_line'] = False
                 parameters['yellow_shade_text'] = 0.99
                 parameters['packet_size_text'] = 15
+                parameters['custom_space_rules_rec'] = True
+                parameters['cluster_width_after_rec_before_cluster'] = 23.0
+                parameters['cluster_width_after_rec_before_rec'] = 31.0
+                parameters['cluster_lines_after_rec_before_cluster'] = 5
+                parameters['cluster_lines_after_rec_before_rec'] = 5
+                parameters['asymmetric_lines_after_rec'] = False
         
                 #Blank        
                 parameters['line_length'] = 100
@@ -247,14 +283,19 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['rec_width'] = 32#32 #minimum 25
                 parameters['cluster_width'] = 45#45.0 #50.0
                 parameters['cluster_lines'] = 3#3
-                parameters['cluster_width_after_rec'] = 60#50#75.0
-                parameters['cluster_lines_after_rec'] = 1
+                #parameters['cluster_width_after_rec'] = 65#50#75.0
+                #parameters['cluster_lines_after_rec'] = 1
                 parameters['cluster_left_margin'] = 9#56.8
                 parameters['cluster_line_length'] = 594#500
-                parameters['custom_space_rules_rec'] = False
                 parameters['extra_cluster_line'] = False
                 parameters['yellow_shade_text'] = 0.98 
                 parameters['packet_size_text'] = 15
+                parameters['custom_space_rules_rec'] = True
+                parameters['cluster_width_after_rec_before_cluster'] = 50
+                parameters['cluster_width_after_rec_before_rec'] = 65
+                parameters['cluster_lines_after_rec_before_cluster'] = 0
+                parameters['cluster_lines_after_rec_before_rec'] = 1
+                parameters['asymmetric_lines_after_rec'] = True
                 #parameters['text_total'] = 700
                 
                 

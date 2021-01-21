@@ -4,7 +4,14 @@ warning('off','all');
 
 
 subplot(3,1,1)
-plot(parameter.out)
+try
+    [~,out] = getPeaks(parameter.y, parameter.minH, parameter.env_window, parameter.lofrec,parameter.hifrec,parameter.peakdis);
+    plot(out)
+catch
+    warning('Filtering error');
+    plot(0);
+end
+
 title("Original processed signal")
 
 subplot(3,1,2)

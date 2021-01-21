@@ -27,8 +27,8 @@ else
 end
 
 if(~load_existing_param)
-    parameter.lofrec = 5500; %11000; %Lower cutoff frequency 
-    parameter.hifrec = 7000;%15000; %Upper cutoff frequency
+    parameter.lofrec = 7000; %11000; %Lower cutoff frequency 
+    parameter.hifrec = 8000;%15000; %Upper cutoff frequency
     parameter.env_window = 1031; %Sliding window for envelope function
 end
 
@@ -76,7 +76,7 @@ spectrogram(y,2560,2500,[],Fs, 'yaxis')
 %% Signal peaks
 
 if(~load_existing_param)
-    parameter.minH = 1.3; %Minimum peak height to consider
+    parameter.minH = 1.2; %Minimum peak height to consider
     parameter.peakdis = 3; %Minimun distance between peaks
 end
 
@@ -92,7 +92,6 @@ Then, we extract the peaks and compute the difference in time between them.
 
 parameter2 = parameter;
 parameter2.y = y;
-parameter2.out = out;
 parameter2.Fs = Fs;
 
 
@@ -109,6 +108,7 @@ uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Posi
 uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.13 0.9 0.025], 'Max', 10000, 'Min', 1, 'Tag', 'env_window', 'Value', parameter.env_window, 'sliderstep',[0.001 0.01], 'Callback', @uiCallback);
 uicontrol('Style', 'text', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.08 0.9 0.04], 'String', strcat('Minimum peak height: ', string(parameter.minH)), 'Tag','minH_str');
 uicontrol('Style','slider', 'Parent', scanParameters, 'unit', 'normalized', 'Position', [0.05 0.06 0.9 0.025], 'Max', 5, 'Tag', 'minH', 'Value', parameter.minH, 'sliderstep',[0.005 0.01], 'Callback', @uiCallback);
+
 
 
 peaks = plot_process_signal(parameter2);
@@ -133,12 +133,12 @@ between limitL1 and limitL2, while bit 1 time difference would be between limitH
 %}
 
 if(~load_existing_param)
-    parameter.limitL1 = 19; %inclusive lower limit of bit 0
+    parameter.limitL1 = 25; %inclusive lower limit of bit 0
     parameter.limitL2 = 50; %exclusive upper limit of bit 0
-    parameter.limitH1 = 6; %inclusive lower limit of bit 1
+    parameter.limitH1 = 4; %inclusive lower limit of bit 1
     parameter.limitH2 = 19; %exclusive upper limit of bit 1
     
-    parameter.limitI = 5; %used to ignore all time differences below that value
+    parameter.limitI = 3; %used to ignore all time differences below that value
     
     parameter.hi_limit = 3; %used to determine how many time differences between limitH1 and limitH2 to consider as bit 1 (FPM-DPPM)
 end
