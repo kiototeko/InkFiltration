@@ -4,7 +4,7 @@ if [ "$#" -lt 2 ]; then
 	echo "Wrong number of paramenters. Usage: raw_injection.sh [options] printer bit_pattern"
 	echo "Use this function to inject a specified bit pattern of any size into a pdf document according to a specific printer"
 	echo -e "Current defined printers: $(python3 ./testPrinter.py -l)"
-	echo -e "Options:\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)\n -b : Make less black the text on a document\n -I : display a graphical representation of the desired pattern"
+	echo -e "Options:\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)\n -b : Make less black the text on a document\n -I : display a graphical representation of the desired pattern\n -m : apply manchester coding\n -r [file] : raw mode, specify raw patterns on file"
 	exit 1
 fi
 
@@ -12,10 +12,12 @@ FILE_IN="Layouts/simpleLayoutBlank.pdf"
 TEXT=""
 LESS_BLACK=""
 DISPLAY_IMAGE=""
+MANCHESTER=""
+RAW=""
 
 ARGUMENTS=(${@: -2})
 
-while getopts "tbIf:" arg; do
+while getopts "tmbIf:r:" arg; do
 	case ${arg} in
 		t ) 
 		TEXT="yes"
@@ -29,6 +31,12 @@ while getopts "tbIf:" arg; do
 		I )
 		DISPLAY_IMAGE="yes"
 		;;
+		m )
+		MANCHESTER="-m"
+		;;
+		r )
+                RAW="${OPTARG}"
+                ;;
 	esac
 done
 
@@ -60,37 +68,55 @@ echo -e "modify stream $AKA3 randomStream\nsave" > randomScript
 
 echo -e "\nSUCCESSFUL INJECTION (testPDF.pdf)----------------\n"
 
-if [ -z "$TEXT" ]; then
-        python3 ./testPrinter.py -rp $FINAL $PRINTER > randomStream
-        cat randomStream
-        
-        if [ -n "$DISPLAY_IMAGE" ]; then
-        
-            python3 ./testPrinter.py -rIp $FINAL $PRINTER > /dev/null
-        
-        fi
+
+if [ -z "$RAW" ]; then
+
+        if [ -z "$TEXT" ]; then
+                python3 ./testPrinter.py $MANCHESTER -rp $FINAL $PRINTER > randomStream
+                cat randomStream
+                
+                if [ -n "$DISPLAY_IMAGE" ]; then
+                
+                python3 ./testPrinter.py $MANCHESTER -rIp $FINAL $PRINTER > /dev/null
+                
+                fi
+
+        else
+                AKA3=$($PEEPDF -C "object ${array[0]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
+                STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
+
+                python3 ./testPrinter.py $MANCHESTER -rt -p $FINAL $PRINTER > randomStream
+                cat randomStream
+                
+                if [ -n "$DISPLAY_IMAGE" ]; then
+                
+                python3 ./testPrinter.py $MANCHESTER -rtIp $FINAL $PRINTER > /dev/null
+                
+                fi
+
+                if [ -n "$LESS_BLACK" ] || [ $PRINTER = "Epson_L4150" ] || [ $PRINTER = "Canon_MG2410" ]; then
+                        echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream						
+                else
+                        echo "$STREAM" >> randomStream
+                fi
+
+        fi		
 
 else
+
+        cat $RAW | tee randomStream
+        echo
+        
         AKA3=$($PEEPDF -C "object ${array[0]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
         STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
-
-	python3 ./testPrinter.py -rt -p $FINAL $PRINTER > randomStream
-	cat randomStream
-	
-	if [ -n "$DISPLAY_IMAGE" ]; then
         
-            python3 ./testPrinter.py -rtIp $FINAL $PRINTER > /dev/null
-        
+        if [ -n "$LESS_BLACK" ]; then
+                echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream						
+        else
+                echo "$STREAM" >> randomStream
         fi
-
-	if [ -n "$LESS_BLACK" ] || [ $PRINTER = "Epson_L4150" ] || [ $PRINTER = "Canon_MG2410" ]; then
-		echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream						
-	else
-		echo "$STREAM" >> randomStream
-	fi
-
-fi		
-
+        
+fi
 
 
 

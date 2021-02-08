@@ -15,6 +15,18 @@ def add_shape(x, y, width, height):
         x = int(x)
         image_array[y_index-int(height):y_index, x:x+int(width),:] = (0,200,255)
         
+def to_manchester(pattern):
+        
+        new_pattern = ""
+        for i in pattern:
+                if(int(i)):
+                        new_pattern += "01"
+                else:
+                        new_pattern += "10"
+                        
+        return new_pattern
+        
+        
 def blank(parameters, packet):
         global total, max_length
         offset = parameters['line_offset'] #offset between lines, the unit is points
@@ -55,101 +67,141 @@ def blank(parameters, packet):
         
 def text(parameters, packet):
         global total, max_length
-        cluster_width = parameters['cluster_width']  #Cluster of lines total width
-        cluster_lines = parameters['cluster_lines'] #Number of cluster lines
-        cluster_left_margin = parameters['cluster_left_margin'] #Cluster of lines left margin
-        cluster_line_length = parameters['cluster_line_length'] #Cluster of lines length
+        
+        
+        text_guard_init = parameters['text_guard_init'] #Extra element at the beginning of the page
+        guard_end = parameters['guard_end'] #Extra element at the end of the page
         
         use_rectangles = parameters['use_rectangles'] #You can use lines instead of rectangles
         
         
         if(use_rectangles):
+                use_only_rectangles = parameters['use_only_rectangles'] #Use only rectangles of different size
                 rec_width = parameters['rec_width'] #Rectangle width
                 rec_left_margin = parameters['rec_left_margin'] #Rectangle left margin
                 rec_line_length = parameters['rec_line_length'] #Rectangle length
-                custom_space_rules_rec = parameters['custom_space_rules_rec'] #If you need more control over spacing when dealing with different bit sequences
-                asymmetric_lines_after_rec = parameters['asymmetric_lines_after_rec'] #If you don't want the lines after a rectangle to be symmetrical in space
-
-                if(custom_space_rules_rec):
-                        cluster_width_after_rec_before_cluster = parameters['cluster_width_after_rec_before_cluster']
-                        cluster_width_after_rec_before_rec = parameters['cluster_width_after_rec_before_rec']
-                        cluster_lines_after_rec_before_cluster = parameters['cluster_lines_after_rec_before_cluster']
-                        cluster_lines_after_rec_before_rec = parameters['cluster_lines_after_rec_before_rec']
-                else:
-                        cluster_width_after_rec = parameters['cluster_width_after_rec'] #Cluster of lines total width after a rectangle is drawn (special case)
-                        cluster_lines_after_rec = parameters['cluster_lines_after_rec'] #Number of cluster lines after a rectangle is drawn (special case)
                 
+
+                if(use_only_rectangles):
+                        rec_width2 = parameters['rec_width2'] #Rectangle width
+                        rec_left_margin2 = parameters['rec_left_margin2'] #Rectangle left margin
+                        rec_line_length2 = parameters['rec_line_length2'] #Rectangle length
+                else:
+                        extra_cluster_line = parameters['extra_cluster_line'] #If you need to add an extra line in some conditions
+                        cluster_width = parameters['cluster_width']  #Cluster of lines total width
+                        cluster_lines = parameters['cluster_lines'] #Number of cluster lines
+                        cluster_left_margin = parameters['cluster_left_margin'] #Cluster of lines left margin
+                        cluster_line_length = parameters['cluster_line_length'] #Cluster of lines length
+                        custom_space_rules_rec = parameters['custom_space_rules_rec'] #If you need more control over spacing when dealing with different bit sequences
+                        asymmetric_lines_after_rec = parameters['asymmetric_lines_after_rec'] #If you don't want the lines after a rectangle to be symmetrical in space
+                        if(custom_space_rules_rec):
+                                cluster_width_after_rec_before_cluster = parameters['cluster_width_after_rec_before_cluster']
+                                cluster_width_after_rec_before_rec = parameters['cluster_width_after_rec_before_rec']
+                                cluster_lines_after_rec_before_cluster = parameters['cluster_lines_after_rec_before_cluster']
+                                cluster_lines_after_rec_before_rec = parameters['cluster_lines_after_rec_before_rec']
+                        else:
+                                cluster_width_after_rec = parameters['cluster_width_after_rec'] #Cluster of lines total width after a rectangle is drawn (special case)
+                                cluster_lines_after_rec = parameters['cluster_lines_after_rec'] #Number of cluster lines after a rectangle is drawn (special case)
+                        
         else:
+                extra_cluster_line = parameters['extra_cluster_line'] #If you need to add an extra line in some conditions
+                cluster_width = parameters['cluster_width']  #Cluster of lines total width
+                cluster_lines = parameters['cluster_lines'] #Number of cluster lines
+                cluster_left_margin = parameters['cluster_left_margin'] #Cluster of lines left margin
+                cluster_line_length = parameters['cluster_line_length'] #Cluster of lines length
                 cluster_width2 = parameters['cluster_width2']  #Cluster of lines total width
                 cluster_lines2 = parameters['cluster_lines2'] #Number of cluster lines
                 cluster_left_margin2 = parameters['cluster_left_margin2'] #Cluster of lines left margin
                 cluster_line_length2 = parameters['cluster_line_length2'] #Cluster of lines length
                 
                 
-        extra_cluster_line = parameters['extra_cluster_line'] #If you need to add an extra line in some conditions
+        
         
         
 
 
         if('text_total' in parameters):
                 total = parameters['text_total']
+                
+                
+        """
+        add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
+        total -= cluster_width2/(cluster_lines2+1)
+        for i in range(cluster_lines2):
+                add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
+                total -= cluster_width2/(cluster_lines2+1)
+        """
+        
+        packet = "1"*text_guard_init + packet
+                
+        if(guard_end):
+                if(not use_rectangles):
+                        packet += "111"
 
         for j,bitidx in enumerate(packet):
 
                 if(not int(bitidx)):
-                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
-                        total -= cluster_width/(cluster_lines+1)
-                        for i in range(cluster_lines):
+                        
+                        if(use_only_rectangles):
+                                total -= rec_width2
+                                add_shape(rec_left_margin2, total, rec_line_length2, rec_width2)
+                        else:
                                 add_shape(cluster_left_margin, total, cluster_line_length, 1)
                                 total -= cluster_width/(cluster_lines+1)
-                        
-                        if(extra_cluster_line):
-                                if(j > 0 and not int(packet[j-1])): #An extra line is drawn when a cluster of lines precedes the actual cluster of lines, e.g., bit sequence 0-0
+                                for i in range(cluster_lines):
                                         add_shape(cluster_left_margin, total, cluster_line_length, 1)
                                         total -= cluster_width/(cluster_lines+1)
-                                        
+                                
+                                
+                                if(extra_cluster_line):
+                                        if(j > 0 and not int(packet[j-1])): #An extra line is drawn when a cluster of lines precedes the actual cluster of lines, e.g., bit sequence 0-0
+                                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                total -= cluster_width/(cluster_lines+1)
+                                                
                 
                 else:
                         if(use_rectangles):
-                            
+                                
                                 total -= rec_width
                                 add_shape(rec_left_margin, total, rec_line_length, rec_width)
                                 #add_shape(200, total, 300, rec_width)
                                 #add_shape(50, total, 500, rec_width)
                                 
+                                if(not use_only_rectangles):
                                 
-                                if(custom_space_rules_rec):
-                                    
-                                        #Space is modified according to whether a rectangle follows another rectangle or a cluster of lines follow a rectangle, e.g., bit sequence 1-1 or 1-0 respectively
+                                        if(custom_space_rules_rec):
                                         
-                                        if(j + 1 < len(packet) and not int(packet[j+1])): #Cluster of lines follows rectangle
-                                        
-                                                cluster_width_after_rec_tmp = cluster_width_after_rec_before_cluster
-                                                cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_cluster
+                                                #Space is modified according to whether a rectangle follows another rectangle or a cluster of lines follow a rectangle, e.g., bit sequence 1-1 or 1-0 respectively
                                                 
-                                        else: #Rectangle follows rectangle
-            
-                                                cluster_width_after_rec_tmp = cluster_width_after_rec_before_rec
-                                                cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_rec
-                                else:
-                                    
-                                        cluster_width_after_rec_tmp = cluster_width_after_rec
-                                        cluster_lines_after_rec_tmp = cluster_lines_after_rec
-                            
-                                if(asymmetric_lines_after_rec and j + 1 < len(packet) and int(packet[j+1])):
-                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+2)
-                                        for i in range(cluster_lines_after_rec_tmp+1):
-                                                if(i == 1):
-                                                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                if(j + 1 < len(packet) and not int(packet[j+1])): #Cluster of lines follows rectangle
+                                                
+                                                        cluster_width_after_rec_tmp = cluster_width_after_rec_before_cluster
+                                                        cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_cluster
+                                                        
+                                                else: #Rectangle follows rectangle
+                
+                                                        cluster_width_after_rec_tmp = cluster_width_after_rec_before_rec
+                                                        cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_rec
+                                        else:
+                                        
+                                                cluster_width_after_rec_tmp = cluster_width_after_rec
+                                                cluster_lines_after_rec_tmp = cluster_lines_after_rec
+                                
+                                        if(asymmetric_lines_after_rec and j + 1 < len(packet) and int(packet[j+1])):
                                                 total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+2)
-                                else:
-                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
-                                        for i in range(cluster_lines_after_rec_tmp):
-                                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                for i in range(cluster_lines_after_rec_tmp+1):
+                                                        if(i == 1):
+                                                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+2)
+                                        else:
                                                 total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
+                                                for i in range(cluster_lines_after_rec_tmp):
+                                                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
                                                 
                         else:
                             
+                                
                                 add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
                                 total -= cluster_width2/(cluster_lines2+1)
                                 for i in range(cluster_lines2):
@@ -159,9 +211,10 @@ def text(parameters, packet):
 
                 
         
-        if(parameters['guard_end']):
-                total -= rec_width
-                add_shape(9, total, max_length, rec_width)
+        if(guard_end):
+                if(use_rectangles):
+                        total -= rec_width
+                        add_shape(9, total, max_length, rec_width)
         
 def SweepOffset(parameters):
         global total
@@ -207,7 +260,22 @@ def printer_parameters(key): #Remember to define your printer name below in prin
         if(key == 0): #Canon_MG2410
         
                 parameters['guard_end'] = True
+                
+                #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
+                parameters['rec_width'] = 33#35.0
+                parameters['rec_left_margin'] = 9
+                parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 56#60.0
+                parameters['rec_left_margin2'] = 590 #550
+                parameters['rec_line_length2'] = 13 #53
+
+                parameters['yellow_shade_text'] = 0.94
+                parameters['packet_size_text'] = 10#11
+                parameters['text_guard_init'] = 0
         
+                """
                 #Text
                 parameters['use_rectangles'] = True
                 parameters['rec_width'] = 42.0
@@ -224,6 +292,8 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['extra_cluster_line'] = True
                 parameters['yellow_shade_text'] = 0.94
                 parameters['packet_size_text'] = 11
+                parameters['text_guard_init'] = False
+                """
                 
                 #Blank        
                 parameters['line_length'] = 10
@@ -237,9 +307,9 @@ def printer_parameters(key): #Remember to define your printer name below in prin
         elif(key == 1): #Epson_L4150
         
                 parameters['guard_end'] = True
-                
                 #Text
                 parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = False
                 parameters['rec_width'] = 24.0
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
@@ -254,6 +324,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['extra_cluster_line'] = False
                 parameters['yellow_shade_text'] = 0.99
                 parameters['packet_size_text'] = 12
+                parameters['text_guard_init'] = 0
                 
                 #Blank        
                 parameters['line_length'] = 50
@@ -269,6 +340,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 
                 #Text
                 parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = False
                 parameters['rec_width'] = 25.0
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
@@ -287,6 +359,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['cluster_lines_after_rec_before_cluster'] = 5
                 parameters['cluster_lines_after_rec_before_rec'] = 5
                 parameters['asymmetric_lines_after_rec'] = False
+                parameters['text_guard_init'] = 0
         
                 #Blank        
                 parameters['line_length'] = 100
@@ -298,21 +371,23 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 
         elif(key == 3): #HP_Deskjet_1115
         
-                parameters['guard_end'] = False
+                parameters['guard_end'] = True
                 
                 #Text
                 parameters['use_rectangles'] = False
-                parameters['cluster_width2'] = 34 #28
-                parameters['cluster_lines2'] = 16 #12
+                parameters['cluster_width2'] = 28#30#25#25#30#34 #28
+                parameters['cluster_lines2'] = 5 #16 #12
                 parameters['cluster_left_margin2'] = 9
                 parameters['cluster_line_length2'] = 594
                 parameters['cluster_width'] = 42#45
-                parameters['cluster_lines'] = 15#15
+                parameters['cluster_lines'] = 12#19#12#14#5#14#15#15
                 parameters['cluster_left_margin'] = 601
                 parameters['cluster_line_length'] = 2
-                parameters['yellow_shade_text'] = 0.98 
+                parameters['yellow_shade_text'] = 0.98#0.98 
                 parameters['extra_cluster_line'] = False
-                parameters['packet_size_text'] = 15
+                parameters['packet_size_text'] = 10#9#8#10
+                #parameters['text_total'] = 700 #750
+                parameters['text_guard_init'] = 3
                 
                 """
                 #Text
@@ -358,6 +433,33 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_init'] = 2
                 parameters['yellow_shade_blank'] = 0.98
                 parameters['packet_size_blank'] = 29 #Not sure about this one, still needs testing
+                
+        elif(key == 4): #Test
+                
+                parameters['guard_end'] = True
+        
+                #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
+                parameters['rec_width'] = 33#35.0
+                parameters['rec_left_margin'] = 9
+                parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 56#60.0
+                parameters['rec_left_margin2'] = 590 #550
+                parameters['rec_line_length2'] = 13 #53
+
+                parameters['yellow_shade_text'] = 0.94
+                parameters['packet_size_text'] = 10#11
+                parameters['text_guard_init'] = 0
+                
+                #Blank        
+                parameters['line_length'] = 10
+                parameters['line_offset'] = 27.0 #Could be adjusted to 21.0
+                parameters['short_alignment'] = "left"
+                parameters['guard_init'] = 1
+                parameters['blank_total'] = 781
+                parameters['yellow_shade_blank'] = 0.94
+                parameters['packet_size_blank'] = 25
                
         """ 
         Template for new printers, add your printer name in printer_name_list
@@ -405,13 +507,14 @@ textmod = False
 raw_mode = False
 info_bits = False
 show_image = False
-printer_name_list = ['Canon_MG2410', 'Epson_L4150', 'HP_Photosmart_D110', 'HP_Deskjet_1115'] #Add your printer name here
+manchester = False
+printer_name_list = ['Canon_MG2410', 'Epson_L4150', 'HP_Photosmart_D110', 'HP_Deskjet_1115', 'Test'] #Add your printer name here
 
 if len(sys.argv) < 2:
         print("Usage: testPrinter.py [OPTIONS] printer_name")
         print("Use this function to generate a bit pattern to inject into a PDF document. By default it prints non-text modulation, use -t otherwise. ")
         print("Current defined printers: ", printer_name_list)
-        print("Possible options\n -p [arg] : use provided bit pattern\n -t : specify text modulation\n -s : line length sweep\n -S : offset sweep\n -i : display number of bits for specified printer\n -l : displays current defined printers\n -r : raw mode, used to specify bit patterns of any size without respecting established packet sizes")
+        print("Possible options\n -p [arg] : use provided bit pattern\n -t : specify text modulation\n -s : line length sweep\n -S : offset sweep\n -i : display number of bits for specified printer\n -l : displays current defined printers\n -r : raw mode, used to specify bit patterns of any size without respecting established packet sizes\n -m : apply manchester encoding")
         exit()
         
 if("-l" in sys.argv): #Special option
@@ -439,15 +542,19 @@ It is important to check if the printer doesn't skip the first line or rectangle
 pattern = "1110001010111001001011010010111001001001" #Bit sequence example
 preamble = "1010" #Preamble to all packets
 max_length = 594 #Maximum line length with respect to the width of the page and its margins
+overhead = 5
 
-opts, args = getopt.getopt(sys.argv[1:], "SsiItrp:")
+opts, args = getopt.getopt(sys.argv[1:], "SmsiItrp:")
 for opt, arg in opts:
         if opt == '-t':
                 textmod = True
         elif opt == '-p':
-                pattern = list(arg)
+                pattern = str(arg)
         elif opt == '-r':
                 raw_mode = True
+        elif opt == '-m':
+                manchester = True
+                overhead = 3
         elif opt == '-i':
                 info_bits = True
         elif opt == '-I':
@@ -468,11 +575,10 @@ for opt, arg in opts:
                 
 if(info_bits):
         if(textmod):
-                print(parameters['packet_size_text']-5)
+                print(parameters['packet_size_text']-overhead)
         else:
-                print(parameters['packet_size_blank']-5)
+                print(parameters['packet_size_blank']-overhead)
         exit()
-
 
 
 if(textmod):
@@ -480,15 +586,25 @@ if(textmod):
         yellow_shade = parameters['yellow_shade_text'] #this can go from 0 to 1.0, where 0 is completly yellow and 1.0 absence of yellow
         print("q\n1.0 1.0", yellow_shade, "rg") 
         
-        if(not raw_mode):
+        if(not raw_mode): #modificar para manchester
                 sz = parameters['packet_size_text']
-                if(len(pattern) < sz-5):
+                if(len(pattern) < sz-overhead):
                         print("(ERROR) Bit pattern should be greater than:", sz)
                         exit(1)
-                parity = get_parity_bit(pattern[0:sz-5])
-                text(parameters, preamble + pattern[0:sz-5] + str(parity))
+                
+                parity = get_parity_bit(pattern[0:sz-overhead])
+                packet = pattern[0:sz-overhead] + str(parity)
+                
+                if(manchester):
+                        packet = to_manchester(packet)
+                        
+                text(parameters, preamble + packet)
         else:
-                text(parameters, pattern)
+                packet = pattern
+                
+                if(manchester):
+                        packet = to_manchester(packet)
+                text(parameters, packet)
 else:
         
         yellow_shade = parameters['yellow_shade_blank']
