@@ -8,13 +8,24 @@ image_array = np.full((790, 612, 3), 255, dtype = np.uint8)
 def add_shape(x, y, width, height):
     global image_array
     
-    print("%.2f %.2f %i %i re" %(x, y, width, height))
+    print("%.2f %.2f %i %.2f re" %(x, y, width, height))
     
     if(y > 0):
         y_index = int(round(800-y))
         x = int(x)
         image_array[y_index-int(height):y_index, x:x+int(width),:] = (0,200,255)
         
+def add_line_rectangle(x, width, height, num_lines):
+        global total
+        
+        add_shape(x, total, width, 1)
+        total -= height/(num_lines+1)
+        for i in range(num_lines):
+                add_shape(x, total, width, 1)
+                total -= height/(num_lines+1)
+        add_shape(x, total, width, 1)
+        
+
 def to_manchester(pattern):
         
         new_pattern = ""
@@ -137,22 +148,39 @@ def text(parameters, packet):
         if(guard_end):
                 if(not use_rectangles):
                         packet += "111"
-
+                        
+        
+        
         for j,bitidx in enumerate(packet):
+                
+                
+                
+                #For Canon
+                if(j + 1 < len(packet) and packet[j:j+2] == "10"):
+                        total -= rec_width2/2.0
+                        add_shape(rec_left_margin, total, rec_line_length, rec_width2/2.0)
+                        total -= rec_width2/2.0
+                        add_shape(rec_left_margin2, total, rec_line_length2, rec_width2/2.0)
+                        continue
+                
+                        
 
                 if(not int(bitidx)):
                         
-                        if(use_only_rectangles):
+                        if(use_rectangles and use_only_rectangles):
+                                
                                 total -= rec_width2
                                 add_shape(rec_left_margin2, total, rec_line_length2, rec_width2)
+                                #add_shape(300, total, 1, rec_width2)
                         else:
                                 add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                #add_shape(200, total, 4, 1)
                                 total -= cluster_width/(cluster_lines+1)
                                 for i in range(cluster_lines):
                                         add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                        #add_shape(200, total, 4, 1)
                                         total -= cluster_width/(cluster_lines+1)
-                                
-                                
+                                #add_shape(200, total, 4, cluster_width)
                                 if(extra_cluster_line):
                                         if(j > 0 and not int(packet[j-1])): #An extra line is drawn when a cluster of lines precedes the actual cluster of lines, e.g., bit sequence 0-0
                                                 add_shape(cluster_left_margin, total, cluster_line_length, 1)
@@ -162,8 +190,12 @@ def text(parameters, packet):
                 else:
                         if(use_rectangles):
                                 
-                                total -= rec_width
-                                add_shape(rec_left_margin, total, rec_line_length, rec_width)
+                                if(j == 0):
+                                        total -= 20.04
+                                        add_shape(rec_left_margin, total, rec_line_length, 20.04) 
+                                else:
+                                        total -= rec_width
+                                        add_shape(rec_left_margin, total, rec_line_length, rec_width)
                                 #add_shape(200, total, 300, rec_width)
                                 #add_shape(50, total, 500, rec_width)
                                 
@@ -200,14 +232,19 @@ def text(parameters, packet):
                                                         total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
                                                 
                         else:
-                            
                                 
+                                if(j == 0):
+                                        add_line_rectangle(cluster_left_margin2, cluster_line_length2, 65.52,31)
+                                else:
+                                        add_line_rectangle(cluster_left_margin2, cluster_line_length2, cluster_width2,cluster_lines2)
+                                """
                                 add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
                                 total -= cluster_width2/(cluster_lines2+1)
                                 for i in range(cluster_lines2):
                                         add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
                                         total -= cluster_width2/(cluster_lines2+1)
-                                
+                                add_shape(cluster_left_margin2, total, cluster_line_length2, 1)#Comment out
+                                """
 
                 
         
@@ -264,16 +301,33 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 #Text
                 parameters['use_rectangles'] = True
                 parameters['use_only_rectangles'] = True
-                parameters['rec_width'] = 33#35.0
+                parameters['rec_width'] = 38.4#33#33#35.0 Cambiar a menos
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_width2'] = 56#60.0
+                parameters['rec_width2'] = 38.4#56#60.0 Este o 56 only problem is with 5 zeroes
+                parameters['rec_left_margin2'] = 590 #550
+                parameters['rec_line_length2'] = 13 #53
+
+                parameters['yellow_shade_text'] = 0.94
+                parameters['packet_size_text'] = 14#11
+                parameters['text_guard_init'] = 1 #cambie esto
+                """
+                parameters['guard_end'] = True
+                
+                #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
+                parameters['rec_width'] = 33#33#33#35.0 Cambiar a menos
+                parameters['rec_left_margin'] = 9
+                parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 60#56#60.0 Este o 56 only problem is with 5 zeroes
                 parameters['rec_left_margin2'] = 590 #550
                 parameters['rec_line_length2'] = 13 #53
 
                 parameters['yellow_shade_text'] = 0.94
                 parameters['packet_size_text'] = 10#11
-                parameters['text_guard_init'] = 0
+                parameters['text_guard_init'] = 1 #cambie esto
+                """
         
                 """
                 #Text
@@ -307,6 +361,21 @@ def printer_parameters(key): #Remember to define your printer name below in prin
         elif(key == 1): #Epson_L4150
         
                 parameters['guard_end'] = True
+                
+                #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
+                parameters['rec_width'] = 40#35#33#35.0
+                parameters['rec_left_margin'] = 9
+                parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 56#60.0
+                parameters['rec_left_margin2'] = 9 #550
+                parameters['rec_line_length2'] = 3 #53
+
+                parameters['yellow_shade_text'] = 0.99
+                parameters['packet_size_text'] = 10#11
+                parameters['text_guard_init'] = 0
+                """
                 #Text
                 parameters['use_rectangles'] = True
                 parameters['use_only_rectangles'] = False
@@ -325,6 +394,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['yellow_shade_text'] = 0.99
                 parameters['packet_size_text'] = 12
                 parameters['text_guard_init'] = 0
+                """
                 
                 #Blank        
                 parameters['line_length'] = 50
@@ -338,6 +408,23 @@ def printer_parameters(key): #Remember to define your printer name below in prin
         
                 parameters['guard_end'] = True
                 
+                #Text
+                parameters['use_rectangles'] = False
+                parameters['cluster_width2'] = 28#30#25#25#30#34 #28
+                parameters['cluster_lines2'] = 15 #16 #12
+                parameters['cluster_left_margin2'] = 9
+                parameters['cluster_line_length2'] = 594
+                parameters['cluster_width'] = 42#45
+                parameters['cluster_lines'] = 12#19#12#14#5#14#15#15
+                parameters['cluster_left_margin'] = 400
+                parameters['cluster_line_length'] = 1
+                parameters['yellow_shade_text'] = 0.99#0.98 
+                parameters['extra_cluster_line'] = False
+                parameters['packet_size_text'] = 10#9#8#10
+                #parameters['text_total'] = 700 #750
+                parameters['text_guard_init'] = 0
+                
+                """
                 #Text
                 parameters['use_rectangles'] = True
                 parameters['use_only_rectangles'] = False
@@ -360,6 +447,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['cluster_lines_after_rec_before_rec'] = 5
                 parameters['asymmetric_lines_after_rec'] = False
                 parameters['text_guard_init'] = 0
+                """
         
                 #Blank        
                 parameters['line_length'] = 100
@@ -371,24 +459,42 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 
         elif(key == 3): #HP_Deskjet_1115
         
+                parameters['guard_end'] = False
+                
+                #Text
+                parameters['use_rectangles'] = False
+                parameters['cluster_width2'] = 32#16#28#30#25#25#30#34 #28 or 24.5
+                parameters['cluster_lines2'] = 15#7#16 #12
+                parameters['cluster_left_margin2'] = 9
+                parameters['cluster_line_length2'] = 594
+                parameters['cluster_width'] = 32#16#42#45
+                parameters['cluster_lines'] = 15#7#19#12#14#5#14#15#15
+                parameters['cluster_left_margin'] = 601
+                parameters['cluster_line_length'] = 2
+                parameters['yellow_shade_text'] = 0.975#0.98 
+                parameters['extra_cluster_line'] = False
+                parameters['packet_size_text'] = 10#9#8#10
+                #parameters['text_total'] = 700 #750
+                parameters['text_guard_init'] = 1
+                """
                 parameters['guard_end'] = True
                 
                 #Text
                 parameters['use_rectangles'] = False
-                parameters['cluster_width2'] = 28#30#25#25#30#34 #28
+                parameters['cluster_width2'] = 25#28#30#25#25#30#34 #28
                 parameters['cluster_lines2'] = 5 #16 #12
                 parameters['cluster_left_margin2'] = 9
                 parameters['cluster_line_length2'] = 594
-                parameters['cluster_width'] = 42#45
+                parameters['cluster_width'] = 40#42#45
                 parameters['cluster_lines'] = 12#19#12#14#5#14#15#15
                 parameters['cluster_left_margin'] = 601
                 parameters['cluster_line_length'] = 2
-                parameters['yellow_shade_text'] = 0.98#0.98 
+                parameters['yellow_shade_text'] = 0.975#0.98 
                 parameters['extra_cluster_line'] = False
                 parameters['packet_size_text'] = 10#9#8#10
                 #parameters['text_total'] = 700 #750
                 parameters['text_guard_init'] = 3
-                
+                """
                 """
                 #Text
                 parameters['rec_width'] = 25 #minimum 25
@@ -434,7 +540,34 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['yellow_shade_blank'] = 0.98
                 parameters['packet_size_blank'] = 29 #Not sure about this one, still needs testing
                 
-        elif(key == 4): #Test
+        elif(key == 4): #HP_Envy
+        
+                parameters['guard_end'] = True
+        
+                #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
+                parameters['rec_width'] = 24#25#30#35.0
+                parameters['rec_left_margin'] = 9
+                parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 100#95#90#60.0
+                parameters['rec_left_margin2'] = 590 #550
+                parameters['rec_line_length2'] = 13 #53
+
+                parameters['yellow_shade_text'] = 0.98
+                parameters['packet_size_text'] = 10#11
+                parameters['text_guard_init'] = 0
+                
+                #Blank        
+                parameters['line_length'] = 10
+                parameters['line_offset'] = 27.0 #Could be adjusted to 21.0
+                parameters['short_alignment'] = "left"
+                parameters['guard_init'] = 1
+                parameters['blank_total'] = 781
+                parameters['yellow_shade_blank'] = 0.94
+                parameters['packet_size_blank'] = 25
+                
+        elif(key == 5): #Test
                 
                 parameters['guard_end'] = True
         
@@ -508,7 +641,7 @@ raw_mode = False
 info_bits = False
 show_image = False
 manchester = False
-printer_name_list = ['Canon_MG2410', 'Epson_L4150', 'HP_Photosmart_D110', 'HP_Deskjet_1115', 'Test'] #Add your printer name here
+printer_name_list = ['Canon_MG2410', 'Epson_L4150', 'HP_Photosmart_D110', 'HP_Deskjet_1115', 'HP_Envy', 'Test'] #Add your printer name here
 
 if len(sys.argv) < 2:
         print("Usage: testPrinter.py [OPTIONS] printer_name")
