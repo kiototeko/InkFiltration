@@ -18,6 +18,7 @@ subplot(3,1,2)
 
 overlap = 10000;
 window = parameter.Fs;
+downsample_factor = 1000;
 num = ceil(length(parameter.y)/(window-overlap));
 peaks = [];
 idx = 1;
@@ -42,9 +43,9 @@ for n = 1:num
         return
     end
     
-    plot((1:length(out2))+(n-1)*(window-overlap)/1000, out2, '-o','MarkerIndices',locs) %In this plot, each color graph corresponds to one time window (which are overlapped)
+    plot((1:length(out2))+(n-1)*(window-overlap)/downsample_factor, out2, '-o','MarkerIndices',locs) %In this plot, each color graph corresponds to one time window (which are overlapped)
     hold on
-    locs = locs+(n-1)*(window-overlap)/1000;
+    locs = locs+(n-1)*(window-overlap)/downsample_factor;
     
     
     for i = 1:length(locs)

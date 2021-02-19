@@ -70,7 +70,6 @@ elseif(type == "Text")
     counter = 0;
     num_lo_pot = 0;
     num_hi_pot = 0;
-    flag41 = 0;
 
     idx = 1;
     num_hi = 0;
@@ -81,14 +80,16 @@ elseif(type == "Text")
 
     for n=1:length(locs_diff)
 
-    
+     
        if preidx <= length(peaks_pre) && peaks(n) > peaks_pre(preidx) %Determines packet boundaries and adds some extra bits
-           bits = add_bit(bits, 1);
-           bits = add_bit(bits, -1);
-           bits = add_bit(bits, 1);
+           bits(idx) = 1;
+           idx = idx + 1;
+           bits(idx) = -1;
+           idx = idx + 1;
+           bits(idx) = 1;
+           idx = idx + 1;
            preidx = preidx + 1;
        end
-        
         
 
         if class == 2
@@ -143,66 +144,26 @@ elseif(type == "Text")
        if locs_diff(n) >= parameter.limitH1 && locs_diff(n) < parameter.limitH2
            
            if class == 4 || class == 3
-               if class == 4
-                   if (class == 4 && locs_diff(n) >= 36)
-                       if num_lo > 0 && num_hi_pot == 0
-                           num_hi_pot = 1;
-                           continue
-                       end
-                   end
-                   if num_lo_pot
-                        bits = add_bit(bits, 0);
-                        num_lo_pot = 0;
-                   end
-                   if num_hi_pot
-                       num_hi = num_hi + 1;
-                       num_hi_pot = 0;
-                   end
-           
-                elseif class == 3 
-                   
+               if (class == 4 && locs_diff(n) >= 36) || (class == 3 && locs_diff(n) >= 45)
                    if num_lo > 0 && num_hi_pot == 0
                        num_hi_pot = 1;
                        continue
                    end
-                   if num_hi_pot
-                       num_hi = num_hi + 1;
-                      
-                       num_lo = num_lo + 1;
-
-                       if ~mod(num_lo,2)
-                           bits = add_bit(bits, 0);
-                       end
-                       num_lo = 0;
-                      
-                       num_hi_pot = 0;
-                   end
-                   
-                   if locs_diff(n) < 41
-                       flag41 = flag41 + 1;
-                       if flag41 == 1
-                           continue
-                       else
-                           if flag41 == 2
-                               num_hi = num_hi +1;
-                               if ~mod(num_hi,2)
-                                    bits = add_bit(bits, 1);
-                                    first_hi = 0;
-                               end
-                           end
-                       end
-                   else
-                       if flag41 == 1
-                           bits = add_bit(bits, 0);
-                       end
-                       flag41 = 0;
-                   end
                end
-               
+               if num_lo_pot
+                    bits(idx) = 0;
+                    idx = idx + 1;
+                    num_lo_pot = 0;
+               end
+               if num_hi_pot
+                   num_hi = num_hi + 1;
+               end
+               num_hi_pot = 0;
                num_lo = 0;
                num_hi = num_hi +1;
                if ~mod(num_hi,2)
-                    bits = add_bit(bits, 1);
+                    bits(idx) = 1;
+                    idx = idx + 1;
                     first_hi = 0;
                end
               
@@ -212,15 +173,19 @@ elseif(type == "Text")
                num_lo = 0;
                num_hi = num_hi +1;
                if num_hi >= parameter.hi_limit && first_hi
-                    bits = add_bit(bits, 1);
+                    bits(idx) = 1;
+                    idx = idx + 1;
                     first_hi = 0;
                end
                last_hi = 1;
            end
 
        elseif locs_diff(n) >= parameter.limitL1 && locs_diff(n) < parameter.limitL2
+
+           first_hi = 1;
+           num_lo = num_lo + 1;
            
-           if class == 4
+           if class == 4 || class == 3
                if num_hi > 0
                    num_lo_pot = 1;
                else
@@ -228,26 +193,7 @@ elseif(type == "Text")
                end
 
                num_hi_pot = 0;
-           elseif class == 3
-               num_lo_pot = 0;
-               if num_hi_pot
-                   num_lo = num_lo + 1;
-                   if ~mod(num_lo,2)
-                       bits = add_bit(bits, 0);
-                   end
-               end
-               if flag41 == 1
-                   num_hi = num_hi +1;
-                   if ~mod(num_hi,2)
-                        bits = add_bit(bits, 1);
-                   end
-               end
-               flag41 = 0;
-               
            end
-           num_hi_pot = 0;
-           first_hi = 1;
-           num_lo = num_lo + 1;
 
            %{
            if class == 3
@@ -271,7 +217,8 @@ elseif(type == "Text")
            %}
            
            if ~mod(num_lo,2)
-                bits = add_bit(bits, 0);
+                bits(idx) = 0;
+                idx = idx + 1;
            end
            
 
@@ -279,17 +226,5 @@ elseif(type == "Text")
        end
     end
 end
-
-end
-
-function bits = add_bit(bits, type)
-persistent idx;
-
-if isempty(bits)
-    idx = 1;
-end
-
-bits(idx) = type;
-idx = idx + 1;
 
 end

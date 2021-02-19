@@ -8,7 +8,16 @@ to process the acoustic signals
 
 load_existing_param = 1; %0 or 1
 
-filename = "samples2/C4Blank3.wav"; %Filename to use
+%"samples2/C3TextTSCompSpeaking.wav"
+%"samples2/C3TextBaseline.wav"
+filename = "samples2/C3TextTSCompSpeaking.wav";%"samples2/C6TextTest4.wav";%"samples2/C4TextNoM3.wav";%"samples2/C7TextEnvy8.wav";%"samples2/C4TextLines104234.wav"; %Filename to use
+%filename = "./../../../code/samples2/C1Blank50cmPt1.wav";
+
+%{
+C4TextLines44528.wav - 1010101100011101010011
+C4TextLines54528.wav - 1010111000110101000011
+
+%}
 
 class_idx = regexp(filename, 'C[0-9]');
 class = str2double(filename{1}(class_idx+1));
@@ -27,17 +36,18 @@ else
 end
 
 if(~load_existing_param)
-    parameter.lofrec = 7000; %11000; %Lower cutoff frequency 
-    parameter.hifrec = 8000;%15000; %Upper cutoff frequency
+    parameter.lofrec = 16000;%14000; %11000; %Lower cutoff frequency 
+    parameter.hifrec = 18000;%15000;%15000; %Upper cutoff frequency
     parameter.env_window = 1031; %Sliding window for envelope function
 end
 
 
 [y, Fs] = audioread(filename); %Load audio file samples
+%y = y(1:Fs*120);
 info = audioinfo(filename); %Check for mono audio
 
 %Filter parameters
-Wp = [parameter.lofrec parameter.hifrec]/(44100/2);
+Wp = [parameter.lofrec parameter.hifrec]/(Fs/2);
 Rp = 0.1;
 Rs = 60;
 n = 6;
@@ -69,18 +79,25 @@ plot(f, powerhi);
 %}
 
 %% Spectrogram of signal
+if length(y) > Fs*30
+    ys = y(1:Fs*30);
+else
+    ys = y;
+end
 
 figure
-spectrogram(y,2560,2500,[],Fs, 'yaxis')
+spectrogram(ys,2560,2500,[],Fs, 'yaxis')
 
 %% Signal peaks
 
-if(~load_existing_param)
-    parameter.minH = 1.2; %Minimum peak height to consider
-    parameter.peakdis = 3; %Minimun distance between peaks
+bypass = 0;
+
+if(~load_existing_param || bypass)
+    parameter.minH = 1.4;%1.4;%1.3; %Minimum peak height to consider
+    parameter.peakdis = 5; %Minimum distance between peaks
 end
 
-
+parameter.lofrec = 977;
 %{
 This code section is part of obtainPeaksLocation.m
 A similar call could be peaks = obtainPeaksLocation(y, 0, parameter, type, Fs, 0);
@@ -120,8 +137,32 @@ peaks = plot_process_signal(parameter2);
 peaks %Peaks location
 locs_diff = diff(peaks) %This variable will contain all the time differences between peaks
  
+locs_diff = locs_diff(locs_diff > 3);
+%{
+idx = 1;
+for n=1:length(locs_diff)
+   
+   if(idx > length(locs_diff))
+       break
+   end
+    
+   if(idx + 1 < length(locs_diff) && locs_diff(idx) < 19 && locs_diff(idx) > 6)
+       
+       if (idx + 2 < length(locs_diff) && locs_diff(idx+1) < 13 && locs_diff(idx+1) > 6 && locs_diff(idx+2) < 13 && locs_diff(idx+2) > 6)
+           locs_diff(idx+2) = locs_diff(idx) + locs_diff(idx+1) + locs_diff(idx+2);
+           idx = idx + 2;
+       else
+           locs_diff(idx+1) = locs_diff(idx) + locs_diff(idx+1);
+           idx = idx + 1;
+       end
 
-
+   elseif(idx -1 > 0 && locs_diff(idx) <= 6)
+       locs_diff(idx-1) = locs_diff(idx-1) + locs_diff(idx);
+   end
+   idx = idx + 1;
+end
+locs_diff = locs_diff(locs_diff >= 19)
+%}
 %% Bits processing
 
 %{
@@ -131,22 +172,24 @@ For example we could define bit 0 to be such that its time difference should be
 between limitL1 and limitL2, while bit 1 time difference would be between limitH1 and limitH2
 
 %}
+bypass = 0;
 
-if(~load_existing_param)
-    parameter.limitL1 = 25; %inclusive lower limit of bit 0
-    parameter.limitL2 = 50; %exclusive upper limit of bit 0
-    parameter.limitH1 = 4; %inclusive lower limit of bit 1
-    parameter.limitH2 = 19; %exclusive upper limit of bit 1
+if(~load_existing_param || bypass)
+    parameter.limitL1 = 15; %inclusive lower limit of bit 0
+    parameter.limitL2 = 27; %exclusive upper limit of bit 0
+    parameter.limitH1 = 27; %inclusive lower limit of bit 1
+    parameter.limitH2 = 51; %exclusive upper limit of bit 1
     
     parameter.limitI = 3; %used to ignore all time differences below that value
     
-    parameter.hi_limit = 3; %used to determine how many time differences between limitH1 and limitH2 to consider as bit 1 (FPM-DPPM)
+    parameter.hi_limit = 2; %used to determine how many time differences between limitH1 and limitH2 to consider as bit 1 (FPM-DPPM)
 end
 
 
 idx = 1;
 bits = [];
 
+%Para deskjet, acuerdate de 27 27 32 27 27
 
 if(strcmp(type, "Text")) %This for loop should only be used for FPM-DPPM (text pages)
     num_hi = 0;
@@ -155,9 +198,46 @@ if(strcmp(type, "Text")) %This for loop should only be used for FPM-DPPM (text p
     
     for n=1:length(locs_diff)
        if locs_diff(n) >= parameter.limitH1 && locs_diff(n) < parameter.limitH2
+           %{
+           if  locs_diff(n) >= 45
+               if num_lo > 0 && n+1 <= length(locs_diff) && locs_diff(n+1) < parameter.limitL2
+                   continue
+                   %{
+               elseif(n+1 < length(locs_diff) && locs_diff(n+1) < parameter.limitL2)
+                   num_lo = num_lo + 1;
+                   continue
+                   %}
+               end
+               
+           end
+           %}
+           if n+1 <= length(locs_diff) && ((num_lo > 0 && locs_diff(n+1) < parameter.limitL2))
+               num_lo = num_lo + 1;
+               if ~mod(num_lo,2)
+                    bits(idx) = 0;
+                    idx = idx + 1;
+               end
+               
+               continue
+           elseif  n+1 <= length(locs_diff) && (num_hi > 0 && locs_diff(n) < 41 && locs_diff(n+1) >= 41)
+               bits(idx) = 0;
+               idx = idx + 1;
+               num_hi = 0;
+               continue
+           elseif n+1 <= length(locs_diff) && (n-1 > 0 && locs_diff(n-1) < parameter.limitL2 && locs_diff(n+1) >= parameter.limitH1)
+               num_lo = num_lo + 1;
+               if ~mod(num_lo,2)
+                    bits(idx) = 0;
+                    idx = idx + 1;
+               end
+           end
+           
            num_lo = 0;
+           
            num_hi = num_hi +1;
-           if num_hi >= parameter.hi_limit && first_hi
+
+           if ~mod(num_hi,2) %num_hi >= parameter.hi_limit && first_hi
+
                 bits(idx) = 1;
                 idx = idx + 1;
                 first_hi = 0;
@@ -166,6 +246,7 @@ if(strcmp(type, "Text")) %This for loop should only be used for FPM-DPPM (text p
        elseif locs_diff(n) >= parameter.limitL1 && locs_diff(n) < parameter.limitL2
            first_hi = 1;
            num_lo = num_lo + 1;
+           
            if ~mod(num_lo,2)
                 bits(idx) = 0;
                 idx = idx + 1;
@@ -173,6 +254,56 @@ if(strcmp(type, "Text")) %This for loop should only be used for FPM-DPPM (text p
            num_hi = 0;
        end
     end
+    
+    %{
+    ENVY
+    for n=1:length(locs_diff)
+       if locs_diff(n) >= parameter.limitH1 && locs_diff(n) < parameter.limitH2
+           %{
+           if  locs_diff(n) >= 45
+               if num_lo > 0 && n+1 <= length(locs_diff) && locs_diff(n+1) < parameter.limitL2
+                   continue
+                   %{
+               elseif(n+1 < length(locs_diff) && locs_diff(n+1) < parameter.limitL2)
+                   num_lo = num_lo + 1;
+                   continue
+                   %}
+               end
+               
+           end
+           %}
+           
+           num_lo = 0;
+           
+           num_hi = num_hi +1;
+           %{ 
+           para envy
+           if ~mod(num_hi,2) %num_hi >= parameter.hi_limit && first_hi
+           %}
+                bits(idx) = 1;
+                idx = idx + 1;
+                first_hi = 0;
+           %end
+
+       elseif locs_diff(n) >= parameter.limitL1 && locs_diff(n) < parameter.limitL2
+           first_hi = 1;
+           num_lo = num_lo + 1;
+           
+          
+           if n+1 <= length(locs_diff) && num_hi > 0 && locs_diff(n+1) >= parameter.limitH1
+               num_lo = num_lo + 1;
+           end
+           
+           
+           
+           if ~mod(num_lo,2)
+                bits(idx) = 0;
+                idx = idx + 1;
+           end
+           num_hi = 0;
+       end
+    end
+    %}
     
 elseif(strcmp(type, "Blank")) %This for loop should only be used for DPPM (blank pages)
     
@@ -228,10 +359,53 @@ save("samples.mat", 'sample','-append')
 %}
 
 if(~load_existing_param)
-    parameter.preminH = 80; %The peaks to consider in the cross-correlation should be filtered by a minimum value
-    parameter.prelimit = 500; %The separation between these peaks
+    parameter.preminH = 480; %The peaks to consider in the cross-correlation should be filtered by a minimum value
+    parameter.prelimit = 900; %The separation between these peaks
 end
 
+
+figure
+
+overlap = 10000*12;
+window = Fs*12;
+
+num = ceil(length(y)/(window-overlap));
+peaks = [];
+idx = 1;
+remnant = zeros(window,1);
+downsample_factor = 1000;
+
+for n = 1:num
+    lowerBound = (n-1)*(window-overlap)+1;
+    if(lowerBound + window > length(y))
+        remnant(1:length(y)-lowerBound+1) = y(lowerBound:length(y));
+        [locs,out2] = getPeaksPre(remnant, sample, parameter.env_window, parameter.preminH);
+    else
+        [locs,out2] = getPeaksPre(y(lowerBound:n*window-overlap*(n-1)), sample, parameter.env_window, parameter.preminH);
+    end
+
+    plot((1:length(out2))+(n-1)*(window-overlap)/downsample_factor, out2) %In this plot, each color graph corresponds to one time window (which are overlapped)
+    hold on
+    locs = locs+(n-1)*(window-overlap)/1000;
+
+
+    for i = 1:length(locs)
+        if idx == 1 || (idx > 1 && locs(i) - peaks(idx-1) > parameter.prelimit)
+            peaks(idx) = locs(i);
+            idx = idx + 1;
+        end
+    end
+
+end
+
+maxx = get(gca,'XLim'); 
+plot(1:maxx(2), ones(1,maxx(2))*parameter.preminH, '-r')
+
+title("Windowed processed signal")
+
+peaks
+
+%{
 [c,lags] = xcorr(out,sample);
 p = lags(c > parameter.preminH);
 
@@ -252,4 +426,5 @@ for i = 1:length(p)
 end
 
 peaks
+%}
 

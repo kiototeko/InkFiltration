@@ -1,4 +1,4 @@
-function num_bits = bits2packets(bits, limits, type, parameter, filename)
+function num_bits = bits2packets(bits, limits, type, parameter, filename, real_num_packets)
 
 if(type == "Blank")
 
@@ -10,17 +10,17 @@ if(type == "Blank")
     num_packets = 0;
     num_bits = 0;
     num_bits_tmp = 0;
-    fID = fopen(strcat('payloads/',parameter.printer_str,'50_bits'));
+    fID = fopen(strcat('payloads/',parameter.printer_str,string(real_num_packets), '_bits'));
 
     pattern = 'Pt2';
     pt2 = contains(filename, pattern);
     if(pt2)
-        fseek(fID, (parameter.szbits-1)*25, 'bof');
+        fseek(fID, (parameter.szbits-1)*real_num_packets, 'bof');
     end
 
     while idx2 < length(bits) - parameter.szbits-4
 
-        if idx3 <= length(limits) && idx2 > limits(idx3) && idx3 <= 25
+        if idx3 <= length(limits) && idx2 > limits(idx3) && idx3 <= real_num_packets
             bitstring = fscanf(fID, '%1i', parameter.szbits-1).';
             idx3 = idx3 + 1;
             done = 1;
@@ -37,6 +37,7 @@ if(type == "Blank")
             end
             
             tmp = (parameter.szbits-1) - (parameter.szbits-1)*pdist([bitstring;bits(idx2+4:idx2+4+parameter.szbits-2)], 'hamming');
+            %maybe check for all bits of the packet
             
             %There can be false positives so this procedure ensures the bit
             %sequence with lowest hamming distance is the one being
@@ -72,21 +73,23 @@ elseif(type == "Text")
     previdx3 = 1;
     num_bits_tmp = 0;
     num_bits = 0;
+    payload = 0;
     bitstring = zeros(parameter.szbits-1,1);
 
-    fID = fopen(strcat('payloads/',parameter.printer_str,'50text_bits'));
+    fID = fopen(strcat('payloads/',parameter.printer_str,'_', string(real_num_packets), 'text_bits'));
     num_packets = 0;
+    num_packets_rec = 0;
 
     pattern = 'Pt2';
     pt2 = contains(filename, pattern);
     if(pt2)
-        fseek(fID, (parameter.szbits-1)*25, 'bof');
+        fseek(fID, (parameter.szbits-1)*real_num_packets, 'bof');
     end
 
 
     while idx2 < length(bits) - parameter.szbits-4
 
-        if idx3 <= length(limits) && idx2 > limits(idx3) && idx3 < 26
+        if idx3 <= length(limits) && idx2 > limits(idx3) && idx3 < real_num_packets+1
             bitstring = fscanf(fID, '%1i', parameter.szbits-1).';
             idx3 = idx3 + 1;
             done = 1;
@@ -103,14 +106,19 @@ elseif(type == "Text")
 
             if previdx3 < idx3
                 num_bits = num_bits + num_bits_tmp;
+                if(num_bits_tmp > 0)
+                    num_packets_rec = num_packets_rec + 1;
+                end
                 previdx3 = idx3;
                 num_bits_tmp = 0;
+                payload
             end
             
             tmp = (parameter.szbits-1) - (parameter.szbits-1)*pdist([bitstring;bits(idx2+4:idx2+4+parameter.szbits-2)], 'hamming');
             
             if tmp > num_bits_tmp
                 num_bits_tmp = tmp;
+                payload = bits(idx2+4:idx2+4+parameter.szbits-2);
             end
 
             if parity ~= bits(idx2+4+parameter.szbits-1)
@@ -130,5 +138,9 @@ elseif(type == "Text")
 end
 
 num_bits = num_bits + num_bits_tmp;
-
+if(num_bits_tmp > 0)
+    num_packets_rec = num_packets_rec + 1;
+end
+payload
+num_packets_rec
 end

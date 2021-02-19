@@ -69,10 +69,10 @@ switch(class)
             end
         case 3 %Canon_MG2410
             if(type == "Blank")
-               parameter.limitL1 = 10;
-               parameter.limitL2 = 35;
-               parameter.limitH1 = 35;
-               parameter.limitH2 = 60;
+               parameter.limitL1 = 30;%10;
+               parameter.limitL2 = 41;%35;
+               parameter.limitH1 = 41;%35;
+               parameter.limitH2 = 51;%60;
                parameter.limitI = 10;
                parameter.printer_str = 'Canon20';
                parameter.preminH = 450;
@@ -84,14 +84,14 @@ switch(class)
                parameter.peakdis = 3;
                parameter.env_window = 1000;
             elseif(type == "Text")
-               parameter.limitL1 = 48;
-               parameter.limitL2 = 200;
-               parameter.limitH1 = 30;
-               parameter.limitH2 = 48;
+               parameter.limitL1 = 15;%30;%48;
+               parameter.limitL2 = 40;%41;%200;
+               parameter.limitH1 = 40;%41;%30;
+               parameter.limitH2 = 80;%70;%51;%48;
                parameter.hi_limit = 1;
-               parameter.printer_str = 'Canon6';
-               parameter.szbits = 7;
-               parameter.minH = 2.4;
+               parameter.printer_str = 'Canon_MG2410_9';%'Canon6';
+               parameter.szbits = 10;
+               parameter.minH = 1.8;%2.4;
                parameter.preminH = 600;
                parameter.env_window = 2500;
                parameter.prelimit = 1000;
@@ -116,23 +116,55 @@ switch(class)
                parameter.peakdis = 3;
                parameter.env_window = 1000;
             elseif(type == "Text")
-               parameter.limitL1 = 48;
-               parameter.limitL2 = 200;
-               parameter.limitH1 = 30;
-               parameter.limitH2 = 48;
+               parameter.limitL1 = 19;
+               parameter.limitL2 = 31;
+               parameter.limitH1 = 31;
+               parameter.limitH2 = 50;
+               parameter.hi_limit = 1;
+               parameter.printer_str = 'HP_Deskjet_1115_12';
+               parameter.szbits = 13;
+               parameter.minH = 1;
+               parameter.preminH = 400;
+               parameter.env_window = 1031;
+               parameter.prelimit = 900;
+               parameter.hifrec = 12000;
+               parameter.lofrec = 8000;
+               parameter.peakdis = 7;
+            end
+            case 5 %HP Envy
+            if(type == "Blank")
+               parameter.limitL1 = 10;
+               parameter.limitL2 = 35;
+               parameter.limitH1 = 35;
+               parameter.limitH2 = 60;
+               parameter.limitI = 10;
+               parameter.printer_str = 'Canon20';
+               parameter.preminH = 450;
+               parameter.prelimit = 500;
+               parameter.minH = 1.5;
+               parameter.szbits = 21;
+               parameter.lofrec = 3500;
+               parameter.hifrec = 6000;
+               parameter.peakdis = 3;
+               parameter.env_window = 1000;
+            elseif(type == "Text")
+               parameter.limitL1 = 15;
+               parameter.limitL2 = 27;
+               parameter.limitH1 = 27;
+               parameter.limitH2 = 51;
                parameter.hi_limit = 1;
                parameter.printer_str = 'Canon6';
-               parameter.szbits = 7;
-               parameter.minH = 2.4;
+               parameter.szbits = 5;
+               parameter.minH = 1.4;
                parameter.preminH = 600;
-               parameter.env_window = 2500;
-               parameter.prelimit = 1000;
-               parameter.hifrec = 4000;
-               parameter.lofrec = 3000;
+               parameter.env_window = 1031;
+               parameter.prelimit = 1031;
+               parameter.hifrec = 18000;
+               parameter.lofrec = 16000;
                parameter.peakdis = 5;
             end
 %{            
-        case 5 %Template
+        case 6 %Template
             if(type == "Blank")
                parameter.limitL1 = 10;
                parameter.limitL2 = 35;
