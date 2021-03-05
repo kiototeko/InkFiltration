@@ -95,7 +95,8 @@ if [ -z "$RAW" ]; then
                 fi
 
                 if [ -n "$LESS_BLACK" ] || [ $PRINTER = "Epson_L4150" ] || [ $PRINTER = "Canon_MG2410" ]; then
-                        echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream						
+                        echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream
+                        #echo "$STREAM" | sed 's/0 0 0 rg/1.0 1.0 0.975 rg/; s/0 0 0 RG/0.01 G/' >> randomStream
                 else
                         echo "$STREAM" >> randomStream
                 fi
@@ -111,7 +112,8 @@ else
         STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
         
         if [ -n "$LESS_BLACK" ]; then
-                echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream						
+                echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream
+                #echo "$STREAM" | sed 's/0 0 0 rg/1.0 1.0 0.98 rg/; s/0 0 0 RG/0.01 G/' >> randomStream
         else
                 echo "$STREAM" >> randomStream
         fi

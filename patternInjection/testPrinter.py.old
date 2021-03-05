@@ -82,50 +82,192 @@ def text(parameters, packet):
         
         text_guard_init = parameters['text_guard_init'] #Extra element at the beginning of the page
         guard_end = parameters['guard_end'] #Extra element at the end of the page
+        
+        use_rectangles = parameters['use_rectangles'] #You can use lines instead of rectangles
+        
         initial_offset = parameters['initial_offset']
         special_transition = parameters['special_transition']
-        if(special_transition):
-                transition_factor = parameters['transition_factor']
-        rec_width = parameters['rec_width'] #Rectangle width
-        rec_left_margin = parameters['rec_left_margin'] #Rectangle left margin
-        rec_line_length = parameters['rec_line_length'] #Rectangle length
-        rec_left_margin2 = parameters['rec_left_margin2'] #Rectangle left margin
-        rec_line_length2 = parameters['rec_line_length2'] #Rectangle length
+        
+        if(use_rectangles):
+                use_only_rectangles = parameters['use_only_rectangles'] #Use only rectangles of different size
+                rec_width = parameters['rec_width'] #Rectangle width
+                rec_left_margin = parameters['rec_left_margin'] #Rectangle left margin
+                rec_line_length = parameters['rec_line_length'] #Rectangle length
+                
+
+                if(use_only_rectangles):
+                        rec_width2 = parameters['rec_width2'] #Rectangle width
+                        rec_left_margin2 = parameters['rec_left_margin2'] #Rectangle left margin
+                        rec_line_length2 = parameters['rec_line_length2'] #Rectangle length
+                else:
+                        extra_cluster_line = parameters['extra_cluster_line'] #If you need to add an extra line in some conditions
+                        cluster_width = parameters['cluster_width']  #Cluster of lines total width
+                        cluster_lines = parameters['cluster_lines'] #Number of cluster lines
+                        cluster_left_margin = parameters['cluster_left_margin'] #Cluster of lines left margin
+                        cluster_line_length = parameters['cluster_line_length'] #Cluster of lines length
+                        custom_space_rules_rec = parameters['custom_space_rules_rec'] #If you need more control over spacing when dealing with different bit sequences
+                        asymmetric_lines_after_rec = parameters['asymmetric_lines_after_rec'] #If you don't want the lines after a rectangle to be symmetrical in space
+                        if(custom_space_rules_rec):
+                                cluster_width_after_rec_before_cluster = parameters['cluster_width_after_rec_before_cluster']
+                                cluster_width_after_rec_before_rec = parameters['cluster_width_after_rec_before_rec']
+                                cluster_lines_after_rec_before_cluster = parameters['cluster_lines_after_rec_before_cluster']
+                                cluster_lines_after_rec_before_rec = parameters['cluster_lines_after_rec_before_rec']
+                        else:
+                                cluster_width_after_rec = parameters['cluster_width_after_rec'] #Cluster of lines total width after a rectangle is drawn (special case)
+                                cluster_lines_after_rec = parameters['cluster_lines_after_rec'] #Number of cluster lines after a rectangle is drawn (special case)
+                        
+        else:
+                extra_cluster_line = parameters['extra_cluster_line'] #If you need to add an extra line in some conditions
+                cluster_width = parameters['cluster_width']  #Cluster of lines total width
+                cluster_lines = parameters['cluster_lines'] #Number of cluster lines
+                cluster_left_margin = parameters['cluster_left_margin'] #Cluster of lines left margin
+                cluster_line_length = parameters['cluster_line_length'] #Cluster of lines length
+                cluster_width2 = parameters['cluster_width2']  #Cluster of lines total width
+                cluster_lines2 = parameters['cluster_lines2'] #Number of cluster lines
+                cluster_left_margin2 = parameters['cluster_left_margin2'] #Cluster of lines left margin
+                cluster_line_length2 = parameters['cluster_line_length2'] #Cluster of lines length
+                
+                
+        
+        
+        
 
 
         if('text_total' in parameters):
                 total = parameters['text_total']
                 
+                
+        """
+        add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
+        total -= cluster_width2/(cluster_lines2+1)
+        for i in range(cluster_lines2):
+                add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
+                total -= cluster_width2/(cluster_lines2+1)
+        """
+        
         packet = "1"*text_guard_init + packet + "1"*guard_end
                 
+        if(guard_end):
+                if(not use_rectangles):
+                        packet += "111"
+                        
+        
+        
         for j,bitidx in enumerate(packet):
                         
 
                 if(not int(bitidx)):
+                        
+                        if(use_rectangles and use_only_rectangles):
                                 
-                        total -= rec_width
-                        add_shape(rec_left_margin2, total, rec_line_length2, rec_width)
-                                        #add_shape(300, total, 1, rec_width2)
+                                total -= rec_width2
+                                add_shape(rec_left_margin2, total, rec_line_length2, rec_width2)
+                                #add_shape(300, total, 1, rec_width2)
+                        else:
+                                add_line_rectangle(cluster_left_margin, cluster_line_length, cluster_width,cluster_lines)
+                                """
+                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                #add_shape(200, total, 4, 1)
+                                total -= cluster_width/(cluster_lines+1)
+                                for i in range(cluster_lines):
+                                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                        #add_shape(200, total, 4, 1)
+                                        total -= cluster_width/(cluster_lines+1)
+                                #add_shape(200, total, 4, cluster_width)
+                                """
+                                if(extra_cluster_line):
+                                        if(j > 0 and not int(packet[j-1])): #An extra line is drawn when a cluster of lines precedes the actual cluster of lines, e.g., bit sequence 0-0
+                                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                total -= cluster_width/(cluster_lines+1)
                                                 
                 
                 else:
-                       
-                        #For Canon, problems when there is no initial padding
-                        if(special_transition and j + 1 < len(packet) and packet[j:j+2] == "10"):
-                                total -= rec_width/2.0
-                                add_shape(rec_left_margin, total, rec_line_length, rec_width/2.0)
-                                total -= rec_width/transition_factor
-                                add_shape(rec_left_margin2, total, rec_line_length2, rec_width/transition_factor)          
-                                continue
-                        
-                        if(j == 0):
-                                total -= initial_offset#91.4#20.04
-                                add_shape(rec_left_margin, total, rec_line_length, initial_offset)# 91.4)#20.04) 
+                        if(use_rectangles):
+                                
+                                
+                                #For Canon, problems when there is no initial padding
+                                if(special_transition and j + 1 < len(packet) and packet[j:j+2] == "10"):
+                                        total -= rec_width2/2.0
+                                        add_shape(rec_left_margin, total, rec_line_length, rec_width2/2.0)
+                                        total -= rec_width2
+                                        add_shape(rec_left_margin2, total, rec_line_length2, rec_width2)          
+                                        """
+                                        total -= rec_width2/2.0
+                                        add_shape(rec_left_margin2, total, rec_line_length2, rec_width2/2.0)
+                                        """
+                                        continue
+                                
+                                if(j == 0):
+                                        total -= initial_offset#91.4#20.04
+                                        add_shape(rec_left_margin, total, rec_line_length, initial_offset)# 91.4)#20.04) 
+                                else:
+                                        total -= rec_width
+                                        add_shape(rec_left_margin, total, rec_line_length, rec_width)
+                                #add_shape(200, total, 300, rec_width)
+                                #add_shape(50, total, 500, rec_width)
+                                
+                                if(not use_only_rectangles):
+                                
+                                        if(custom_space_rules_rec):
+                                        
+                                                #Space is modified according to whether a rectangle follows another rectangle or a cluster of lines follow a rectangle, e.g., bit sequence 1-1 or 1-0 respectively
+                                                
+                                                if(j + 1 < len(packet) and not int(packet[j+1])): #Cluster of lines follows rectangle
+                                                
+                                                        cluster_width_after_rec_tmp = cluster_width_after_rec_before_cluster
+                                                        cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_cluster
+                                                        
+                                                else: #Rectangle follows rectangle
+                
+                                                        cluster_width_after_rec_tmp = cluster_width_after_rec_before_rec
+                                                        cluster_lines_after_rec_tmp = cluster_lines_after_rec_before_rec
+                                        else:
+                                        
+                                                cluster_width_after_rec_tmp = cluster_width_after_rec
+                                                cluster_lines_after_rec_tmp = cluster_lines_after_rec
+                                
+                                        if(asymmetric_lines_after_rec and j + 1 < len(packet) and int(packet[j+1])):
+                                                total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+2)
+                                                for i in range(cluster_lines_after_rec_tmp+1):
+                                                        if(i == 1):
+                                                                add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+2)
+                                        else:
+                                                total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
+                                                for i in range(cluster_lines_after_rec_tmp):
+                                                        add_shape(cluster_left_margin, total, cluster_line_length, 1)
+                                                        total -= cluster_width_after_rec_tmp/(cluster_lines_after_rec_tmp+1)
+                                                
                         else:
-                                total -= rec_width
-                                add_shape(rec_left_margin, total, rec_line_length, rec_width)
                                 
-                                
+                                #For HP
+                                if(j + 1 < len(packet) and packet[j:j+2] == "10"):
+                                        add_line_rectangle(cluster_left_margin2, cluster_line_length2, cluster_width2/2.0,int(cluster_lines2/2))
+                                        add_line_rectangle(cluster_left_margin, cluster_line_length, cluster_width2/2.0,int(cluster_lines2/2))
+                                        continue
+                                """
+                                if(j == 0):
+                                        add_line_rectangle(cluster_left_margin2, cluster_line_length2, 65.52,31)
+                                else:
+                                        add_line_rectangle(cluster_left_margin2, cluster_line_length2, cluster_width2,cluster_lines2)
+                                """
+                                add_line_rectangle(cluster_left_margin2, cluster_line_length2, cluster_width2,cluster_lines2)
+                                """
+                                add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
+                                total -= cluster_width2/(cluster_lines2+1)
+                                for i in range(cluster_lines2):
+                                        add_shape(cluster_left_margin2, total, cluster_line_length2, 1)
+                                        total -= cluster_width2/(cluster_lines2+1)
+                                add_shape(cluster_left_margin2, total, cluster_line_length2, 1)#Comment out
+                                """
+
+                
+        """
+        if(guard_end):
+                if(use_rectangles):
+                        total -= rec_width
+                        add_shape(9, total, max_length, rec_width)
+        """
         
 def SweepOffset(parameters):
         global total
@@ -178,18 +320,14 @@ def SweepColor():
                 if(yellow_shade > 1):
                         break
                 
-def SweepTriangle(left=True):
+def SweepTriangle():
         global total
         
         line_length = 594
         step_size = round(line_length/(total - 9),4)
         
         for i in range(int(total)-9):
-                if(left):
-                        line_start = 9
-                else:
-                        line_start = 9 + (594-round(line_length,4))
-                add_shape(line_start, total, round(line_length,4), 1)
+                add_shape(9 + (594-round(line_length,4)), total, round(line_length,4), 1)
                 line_length -= step_size
                 total -= 1
                 
@@ -209,9 +347,12 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = 1
                 
                 #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
                 parameters['rec_width'] = 38.4#33#33#35.0 Cambiar a menos
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 38.4#56#60.0 Este o 56 only problem is with 5 zeroes
                 parameters['rec_left_margin2'] = 590 #550
                 parameters['rec_line_length2'] = 13 #53
                 parameters['initial_offset'] = 20.04
@@ -219,7 +360,6 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['yellow_shade_text'] = 0.94
                 parameters['packet_size_text'] = 14#11
                 parameters['text_guard_init'] = 1 #cambie esto
-                parameters['transition_factor'] = 2.0
                 
                 
                 """
@@ -276,9 +416,12 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = 1
                 
                 #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
                 parameters['rec_width'] = 46.4#23.2#35#33#35.0
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 46.4#23.2#60.0
                 parameters['rec_left_margin2'] = 9 #550
                 parameters['rec_line_length2'] = 3 #53
                 parameters['initial_offset'] = 91.4
@@ -392,9 +535,12 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = 1
                 
                 #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
                 parameters['rec_width'] = 22.8#11.4
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 22.8#11.4#45.6
                 parameters['rec_left_margin2'] = 560
                 parameters['rec_line_length2'] = 43
                 parameters['initial_offset'] = 79#67.6
@@ -402,7 +548,6 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['yellow_shade_text'] = 0.98
                 parameters['packet_size_text'] = 20
                 parameters['text_guard_init'] = 2 
-                parameters['transition_factor'] = 1.0
         
                 """
                 parameters['guard_end'] = False
@@ -661,7 +806,7 @@ for opt, arg in opts:
         elif opt == '-T':
                 yellow_shade = parameters['yellow_shade_blank']
                 print("q\n1.0 1.0", 0, "rg")
-                SweepTriangle(left=True)
+                SweepTriangle()
                 print("f\nQ\n")
                 exit()
                 

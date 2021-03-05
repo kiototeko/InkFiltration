@@ -776,7 +776,3 @@ q
 f
 Q
 
-
-Usage: stream $object_id [$version]
-
-Shows the object stream content of the specified version after being decoded and decrypted (if necessary)

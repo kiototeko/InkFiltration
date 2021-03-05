@@ -159,7 +159,7 @@ do
 
 	fi
 	
-	echo "$FINAL"
+	echo -e "$FINAL"
 	
 	FINAL=""
 done
