@@ -195,6 +195,34 @@ def SweepTriangle(left=True):
                 
                 if(line_length < 1):
                         break
+                
+def testLength(factor, parameters):
+        global total
+        line_length = 594
+        factor = parameters['rec_line_length2']
+        
+        step_size = math.floor((total-9)/2)
+        
+        print("q\n1.0 1.0", 0, "rg")
+        total -= step_size
+        add_shape(9, total, line_length, step_size)
+        print("f\n")
+        print("1.0 1.0", parameters['yellow_shade_text'], "rg")
+        total -= step_size
+        add_shape(9+line_length-factor, total, factor, step_size)
+        print("f\nQ\n")
+        """
+        total -= parameters['initial_offset'] + parameters['rec_width']
+        add_shape(9, total, line_length, parameters['initial_offset'] + parameters['rec_width'])
+        
+        step_size = parameters['rec_width']*10
+        
+        #for i in range(2):
+        total -= step_size
+        line_length -= factor
+        add_shape(9+factor, total, line_length, step_size)
+        """
+        
 
 
 def printer_parameters(key): #Remember to define your printer name below in printer_name_list
@@ -222,44 +250,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['transition_factor'] = 2.0
                 
                 
-                """
-                parameters['guard_end'] = True
-                
-                
-                #Text
-                parameters['use_rectangles'] = True
-                parameters['use_only_rectangles'] = True
-                parameters['rec_width'] = 33#33#33#35.0 Cambiar a menos
-                parameters['rec_left_margin'] = 9
-                parameters['rec_line_length'] = 594
-                parameters['rec_width2'] = 60#56#60.0 Este o 56 only problem is with 5 zeroes
-                parameters['rec_left_margin2'] = 590 #550
-                parameters['rec_line_length2'] = 13 #53
 
-                parameters['yellow_shade_text'] = 0.94
-                parameters['packet_size_text'] = 10#11
-                parameters['text_guard_init'] = 1 #cambie esto
-                """
-        
-                """
-                #Text
-                parameters['use_rectangles'] = True
-                parameters['rec_width'] = 42.0
-                parameters['rec_left_margin'] = 9
-                parameters['rec_line_length'] = 594
-                parameters['cluster_width'] = 28.0
-                parameters['cluster_lines'] = 1
-                parameters['cluster_width_after_rec'] = 28.0
-                parameters['cluster_lines_after_rec'] = 1
-                parameters['cluster_left_margin'] = 9
-                parameters['cluster_line_length'] = 594
-                parameters['custom_space_rules_rec'] = False
-                parameters['asymmetric_lines_after_rec'] = False
-                parameters['extra_cluster_line'] = True
-                parameters['yellow_shade_text'] = 0.94
-                parameters['packet_size_text'] = 11
-                parameters['text_guard_init'] = False
-                """
                 
                 #Blank        
                 parameters['line_length'] = 10
@@ -287,43 +278,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['packet_size_text'] = 14#11
                 parameters['text_guard_init'] = 0
                 #parameters['text_total'] = 600
-                """
-                parameters['guard_end'] = True
-                
-                #Text
-                parameters['use_rectangles'] = True
-                parameters['use_only_rectangles'] = True
-                parameters['rec_width'] = 40#35#33#35.0
-                parameters['rec_left_margin'] = 9
-                parameters['rec_line_length'] = 594
-                parameters['rec_width2'] = 56#60.0
-                parameters['rec_left_margin2'] = 9 #550
-                parameters['rec_line_length2'] = 3 #53
 
-                parameters['yellow_shade_text'] = 0.99
-                parameters['packet_size_text'] = 10#11
-                parameters['text_guard_init'] = 0
-                """
-                """
-                #Text
-                parameters['use_rectangles'] = True
-                parameters['use_only_rectangles'] = False
-                parameters['rec_width'] = 24.0
-                parameters['rec_left_margin'] = 9
-                parameters['rec_line_length'] = 594
-                parameters['cluster_width'] = 42.0
-                parameters['cluster_lines'] = 3
-                parameters['cluster_width_after_rec'] = 42.0
-                parameters['cluster_lines_after_rec'] = 3
-                parameters['cluster_left_margin'] = 56.8
-                parameters['cluster_line_length'] = 500
-                parameters['custom_space_rules_rec'] = False
-                parameters['asymmetric_lines_after_rec'] = False
-                parameters['extra_cluster_line'] = False
-                parameters['yellow_shade_text'] = 0.99
-                parameters['packet_size_text'] = 12
-                parameters['text_guard_init'] = 0
-                """
                 
                 #Blank        
                 parameters['line_length'] = 50
@@ -353,30 +308,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 #parameters['text_total'] = 700 #750
                 parameters['text_guard_init'] = 0
                 
-                """
-                #Text
-                parameters['use_rectangles'] = True
-                parameters['use_only_rectangles'] = False
-                parameters['rec_width'] = 25.0
-                parameters['rec_left_margin'] = 9
-                parameters['rec_line_length'] = 594
-                parameters['cluster_width'] = 32.0
-                parameters['cluster_lines'] = 10
-                #parameters['cluster_width_after_rec'] = 21.0
-                #parameters['cluster_lines_after_rec'] = 5
-                parameters['cluster_left_margin'] = 9
-                parameters['cluster_line_length'] = 594
-                parameters['extra_cluster_line'] = False
-                parameters['yellow_shade_text'] = 0.99
-                parameters['packet_size_text'] = 15
-                parameters['custom_space_rules_rec'] = True
-                parameters['cluster_width_after_rec_before_cluster'] = 23.0
-                parameters['cluster_width_after_rec_before_rec'] = 31.0
-                parameters['cluster_lines_after_rec_before_cluster'] = 5
-                parameters['cluster_lines_after_rec_before_rec'] = 5
-                parameters['asymmetric_lines_after_rec'] = False
-                parameters['text_guard_init'] = 0
-                """
+
         
                 #Blank        
                 parameters['line_length'] = 100
@@ -395,8 +327,8 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['rec_width'] = 22.8#11.4
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_left_margin2'] = 560
-                parameters['rec_line_length2'] = 43
+                parameters['rec_left_margin2'] = 560#583#601#560
+                parameters['rec_line_length2'] = 43#20#2#43
                 parameters['initial_offset'] = 79#67.6
                 parameters['special_transition'] = True
                 parameters['yellow_shade_text'] = 0.98
@@ -404,81 +336,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['text_guard_init'] = 2 
                 parameters['transition_factor'] = 1.0
         
-                """
-                parameters['guard_end'] = False
-                
-                #Text
-                parameters['use_rectangles'] = False
-                parameters['cluster_width2'] = 32#16#28#30#25#25#30#34 #28 or 24.5
-                parameters['cluster_lines2'] = 15#7#16 #12
-                parameters['cluster_left_margin2'] = 9
-                parameters['cluster_line_length2'] = 594
-                parameters['cluster_width'] = 32#16#42#45
-                parameters['cluster_lines'] = 15#7#19#12#14#5#14#15#15
-                parameters['cluster_left_margin'] = 601
-                parameters['cluster_line_length'] = 2
-                parameters['yellow_shade_text'] = 0.975#0.98 
-                parameters['extra_cluster_line'] = False
-                parameters['packet_size_text'] = 17#9#8#10
-                #parameters['text_total'] = 500 #750
-                parameters['text_guard_init'] = 2
-                parameters['initial_offset'] = 65.52
-                parameters['special_transition'] = True
-                
-                
-                parameters['guard_end'] = True
-                
-                #Text
-                parameters['use_rectangles'] = False
-                parameters['cluster_width2'] = 25#28#30#25#25#30#34 #28
-                parameters['cluster_lines2'] = 5 #16 #12
-                parameters['cluster_left_margin2'] = 9
-                parameters['cluster_line_length2'] = 594
-                parameters['cluster_width'] = 40#42#45
-                parameters['cluster_lines'] = 12#19#12#14#5#14#15#15
-                parameters['cluster_left_margin'] = 601
-                parameters['cluster_line_length'] = 2
-                parameters['yellow_shade_text'] = 0.975#0.98 
-                parameters['extra_cluster_line'] = False
-                parameters['packet_size_text'] = 10#9#8#10
-                #parameters['text_total'] = 700 #750
-                parameters['text_guard_init'] = 3
-                """
-                """
-                #Text
-                parameters['rec_width'] = 25 #minimum 25
-                parameters['cluster_width'] = 45#45.0 #50.0
-                parameters['cluster_lines'] = 0#3
-                parameters['cluster_width_after_rec'] = 55#50#75.0
-                parameters['cluster_lines_after_rec'] = 0
-                parameters['cluster_left_margin'] = 56.8#56.8
-                parameters['cluster_line_length'] = 500#500
-                parameters['custom_space_rules_rec'] = False
-                parameters['extra_cluster_line'] = False
-                parameters['yellow_shade_text'] = 0.98 
-                parameters['packet_size_text'] = 15
-                #parameters['text_total'] = 700
-                """
-                """
-                #Text
-                parameters['rec_width'] = 35#32 #minimum 25
-                parameters['cluster_width'] = 50#40#45.0 #50.0
-                parameters['cluster_lines'] = 10#3
-                #parameters['cluster_width_after_rec'] = 65#50#75.0
-                #parameters['cluster_lines_after_rec'] = 1
-                parameters['cluster_left_margin'] = 9#56.8
-                parameters['cluster_line_length'] = 594#500
-                parameters['extra_cluster_line'] = False
-                parameters['yellow_shade_text'] = 0.98 
-                parameters['packet_size_text'] = 15
-                parameters['custom_space_rules_rec'] = True
-                parameters['cluster_width_after_rec_before_cluster'] = 50
-                parameters['cluster_width_after_rec_before_rec'] = 70
-                parameters['cluster_lines_after_rec_before_cluster'] = 0
-                parameters['cluster_lines_after_rec_before_rec'] = 1
-                parameters['asymmetric_lines_after_rec'] = True
-                #parameters['text_total'] = 700
-                """
+
                 
                 
                 #Blank        
@@ -626,7 +484,7 @@ preamble = "1010" #Preamble to all packets
 max_length = 594 #Maximum line length with respect to the width of the page and its margins
 overhead = 5
 
-opts, args = getopt.getopt(sys.argv[1:], "SCTmsiItrp:")
+opts, args = getopt.getopt(sys.argv[1:], "L:SCTmsiItrp:")
 for opt, arg in opts:
         if opt == '-t':
                 textmod = True
@@ -661,8 +519,12 @@ for opt, arg in opts:
         elif opt == '-T':
                 yellow_shade = parameters['yellow_shade_blank']
                 print("q\n1.0 1.0", 0, "rg")
-                SweepTriangle(left=True)
+                SweepTriangle(left=False)
                 print("f\nQ\n")
+                exit()
+        elif opt == '-L':
+                testLength(int(arg), parameters)
+                
                 exit()
                 
                 
