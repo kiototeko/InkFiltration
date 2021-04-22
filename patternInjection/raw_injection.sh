@@ -14,10 +14,11 @@ LESS_BLACK=""
 DISPLAY_IMAGE=""
 MANCHESTER=""
 RAW=""
+CHANGE_WIDTH=""
 
 ARGUMENTS=(${@: -2})
 
-while getopts "tmbIf:r:" arg; do
+while getopts "tmbIf:r:w:" arg; do
 	case ${arg} in
 		t ) 
 		TEXT="yes"
@@ -36,6 +37,9 @@ while getopts "tmbIf:r:" arg; do
 		;;
 		r )
                 RAW="${OPTARG}"
+                ;;
+                w )
+                CHANGE_WIDTH="${OPTARG}"
                 ;;
 	esac
 done
@@ -104,8 +108,12 @@ if [ -z "$RAW" ]; then
         fi		
 
 else
-
-        cat $RAW | tee randomStream
+        if [ -z "$CHANGE_WIDTH" ]; then
+                cat $RAW | tee randomStream
+        else
+                START=$(python -c "print(783 - $CHANGE_WIDTH)")
+                echo -ne "q\n1 1 0.98 rg\n9 $START 594 $CHANGE_WIDTH re\nf\nQ\n" | tee randomStream
+        fi
         echo
         
         AKA3=$($PEEPDF -C "object ${array[0]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")

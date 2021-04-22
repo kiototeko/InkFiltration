@@ -10,10 +10,23 @@ def add_shape(x, y, width, height):
     
     print("%.2f %.2f %i %.2f re" %(x, y, width, height))
     
+    """
+    if width < 100:
+        print("%.2f %.2f %i %.2f re" %(x, y, width, height))
+    else:
+        print("9 %.2f 10 %.2f re" %(y, height))
+        print("583 %.2f 20 %.2f re" %(y, height))
+    """
+    
+    
     if(y > 0):
         y_index = int(round(800-y))
         x = int(x)
         image_array[y_index-int(height):y_index, x:x+int(width),:] = (0,200,255)
+        
+def add_defense():
+    add_shape(9, 9, 3, 783)
+    add_shape(600, 9, 3, 783)
         
 def add_line_rectangle(x, width, height, num_lines):
         global total
@@ -111,11 +124,13 @@ def text(parameters, packet):
                 else:
                        
                         #For Canon, problems when there is no initial padding
-                        if(special_transition and j + 1 < len(packet) and packet[j:j+2] == "10"):
+                        if(special_transition and j + 1 < len(packet) and packet[j:j+2] == "10" and j):
+                                
                                 total -= rec_width/2.0
                                 add_shape(rec_left_margin, total, rec_line_length, rec_width/2.0)
                                 total -= rec_width/transition_factor
                                 add_shape(rec_left_margin2, total, rec_line_length2, rec_width/transition_factor)          
+                                
                                 continue
                         
                         if(j == 0):
@@ -196,12 +211,13 @@ def SweepTriangle(left=True):
                 if(line_length < 1):
                         break
                 
-def testLength(factor, parameters):
+def testLength(parameters):
         global total
         line_length = 594
         factor = parameters['rec_line_length2']
+        margin = parameters['rec_left_margin2']
         
-        step_size = math.floor((total-9)/2)
+        step_size = math.floor((total-9)/5)
         
         print("q\n1.0 1.0", 0, "rg")
         total -= step_size
@@ -209,7 +225,10 @@ def testLength(factor, parameters):
         print("f\n")
         print("1.0 1.0", parameters['yellow_shade_text'], "rg")
         total -= step_size
-        add_shape(9+line_length-factor, total, factor, step_size)
+        if(margin > 250):
+            add_shape(9+line_length-factor, total, factor, step_size)
+        else:
+            add_shape(9, total, factor, step_size)
         print("f\nQ\n")
         """
         total -= parameters['initial_offset'] + parameters['rec_width']
@@ -242,11 +261,11 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['rec_line_length'] = 594
                 parameters['rec_left_margin2'] = 590 #550
                 parameters['rec_line_length2'] = 13 #53
-                parameters['initial_offset'] = 20.04
-                parameters['special_transition'] = True
+                parameters['initial_offset'] = 21.12#20.04
+                parameters['special_transition'] = False
                 parameters['yellow_shade_text'] = 0.94
                 parameters['packet_size_text'] = 14#11
-                parameters['text_guard_init'] = 1 #cambie esto
+                parameters['text_guard_init'] = 1 #cambie esto add more??
                 parameters['transition_factor'] = 2.0
                 
                 
@@ -272,11 +291,12 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['rec_line_length'] = 594
                 parameters['rec_left_margin2'] = 9 #550
                 parameters['rec_line_length2'] = 3 #53
-                parameters['initial_offset'] = 91.4
-                parameters['special_transition'] = False
+                parameters['initial_offset'] = 45
+                parameters['special_transition'] = False#True
                 parameters['yellow_shade_text'] = 0.99
                 parameters['packet_size_text'] = 14#11
-                parameters['text_guard_init'] = 0
+                parameters['text_guard_init'] = 1
+                parameters['transition_factor'] = 2.0
                 #parameters['text_total'] = 600
 
                 
@@ -289,7 +309,23 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['packet_size_blank'] = 32
                 
         elif(key == 2): #HP_Photosmart_D110
+            
+                parameters['guard_end'] = 1
+                
+                #Text
+                parameters['rec_width'] = 16.08#8.04#32.16
+                parameters['rec_left_margin'] = 9
+                parameters['rec_line_length'] = 594
+                parameters['rec_left_margin2'] = 590#600#583#601#560
+                parameters['rec_line_length2'] = 10#20#2#43
+                parameters['initial_offset'] = 25.56#79#67.6#30.73
+                parameters['special_transition'] = False
+                parameters['yellow_shade_text'] = 0
+                parameters['packet_size_text'] = 20
+                parameters['text_guard_init'] = 1 #2
+                parameters['transition_factor'] = 1.0
         
+                """
                 parameters['guard_end'] = True
                 
                 #Text
@@ -317,6 +353,7 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_init'] = 0
                 parameters['yellow_shade_blank'] = 0.99
                 parameters['packet_size_blank'] = 30
+                """
                 
         elif(key == 3): #HP_Deskjet_1115
         
@@ -329,11 +366,11 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['rec_line_length'] = 594
                 parameters['rec_left_margin2'] = 560#583#601#560
                 parameters['rec_line_length2'] = 43#20#2#43
-                parameters['initial_offset'] = 79#67.6
+                parameters['initial_offset'] = 30.72#79#67.6#30.73
                 parameters['special_transition'] = True
                 parameters['yellow_shade_text'] = 0.98
-                parameters['packet_size_text'] = 20
-                parameters['text_guard_init'] = 2 
+                parameters['packet_size_text'] = 16#20#20#20
+                parameters['text_guard_init'] = 2 #2
                 parameters['transition_factor'] = 1.0
         
 
@@ -517,13 +554,16 @@ for opt, arg in opts:
                 print("Q\n")
                 exit()
         elif opt == '-T':
-                yellow_shade = parameters['yellow_shade_blank']
                 print("q\n1.0 1.0", 0, "rg")
-                SweepTriangle(left=False)
+                if(parameters['rec_left_margin2'] > 250):
+                    left = False
+                else:
+                    left = True
+                SweepTriangle(left)
                 print("f\nQ\n")
                 exit()
         elif opt == '-L':
-                testLength(int(arg), parameters)
+                testLength(parameters)
                 
                 exit()
                 
@@ -575,6 +615,8 @@ else:
         else:
                 blank(parameters, pattern)
 
+
+#add_defense()
 print("f\nQ\n")
 
 
