@@ -26,7 +26,7 @@ MIDDLE=$(($NUM_PACKETS/2))
 
 echo
 
-echo -e "PREAMBLE|PAYLOAD|PARITY"
+echo -e "NUM|PREAMBLE|PAYLOAD|PARITY"
 
 echo
 
@@ -47,7 +47,7 @@ do
         
         let PARITY%=2
         
-        echo -e "1010\t$PAYLOAD\t$PARITY"
+        echo -e "$((i+1))\t1010\t$PAYLOAD\t$PARITY"
 
 done
 
