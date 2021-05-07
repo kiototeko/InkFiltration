@@ -24,7 +24,7 @@ IFS=',' read -r -a PRINTERS <<< $TMP
 
 PRINTER_SEARCH=$(lpstat -W "not-completed" -o | cut -d " " -f 1 |  sed 's/\-[0-9]*$//' )
 
-PRINTER=$(echo $PRINTER_SEARCH | sed 's/EPSON_L4150_Series/Epson/; s/MG2400-series/Canon/; s/Photosmart-D110-series/HP/')
+PRINTER=$(echo $PRINTER_SEARCH | sed 's/EPSON_L4150_Series/Epson_L4150/; s/MG2400-series/Canon_MG2410/; s/HP_DeskJet_1110_series/HP_Deskjet_1115/')
 
 echo "$PRINTER" >> /tmp/log
 
@@ -33,8 +33,12 @@ FORMAT_DATA="/tmp/genericPattern.py"
 DATA="/tmp/data"
 DATA_TMP="/tmp/data.tmp"
 AKA=$($PEEPDF -C 'search "/Type /Page"'  $FILE_IN | cut -f1 -d$'\x1b')
-AKA2=$(echo -n $AKA | tr '[]' ' ')
+AKA2=$(echo -n $AKA | tr -d '[]')
 IFS=', ' read -r -a array <<< $AKA2
+AKA=$($PEEPDF -C 'search "/Type /Pages"'  $FILE_IN | cut -f1 -d$'\x1b')
+AKA2=$(echo -n $AKA | tr -d '[]')
+array=( ${array[@]/$AKA2} )
+
 TMP_FILE="/tmp/tmp"
 TMP_PEEP="/tmp/peep"
 RGB_PATTERN="[0-9].*\s[0-9].*\s[0-9].*\s"

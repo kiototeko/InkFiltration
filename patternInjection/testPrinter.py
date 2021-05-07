@@ -316,20 +316,19 @@ def printer_parameters(key): #Remember to define your printer name below in prin
         elif(key == 4): #HP_Envy
         
                 parameters['guard_end'] = 1
-        
+
                 #Text
-                parameters['use_rectangles'] = True
-                parameters['use_only_rectangles'] = True
-                parameters['rec_width'] = 24
+                parameters['rec_width'] = 39.6
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_width2'] = 100
-                parameters['rec_left_margin2'] = 590 
-                parameters['rec_line_length2'] = 13 
-
+                parameters['rec_left_margin2'] = 590
+                parameters['rec_line_length2'] = 13
+                parameters['initial_offset'] = 41.36
+                parameters['special_transition'] = True
                 parameters['yellow_shade_text'] = 0.98
-                parameters['packet_size_text'] = 10
-                parameters['text_guard_init'] = 0
+                parameters['packet_size_text'] = 16
+                parameters['text_guard_init'] = 1 
+                parameters['transition_factor'] = 2.0
                 
                 
         elif(key == 5): #Test

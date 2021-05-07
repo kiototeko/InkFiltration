@@ -1,4 +1,4 @@
-# InkFiltration: Using Inkjet Printers for Acoustic Data Exfiltration from Air-Gapped Networks
+# InkFiltration: Using Inkjet Printers for Acoustic Data Exfiltration From Air-Gapped Networks
 
 A covert channel can be established by leveraging the acoustic emissions of inkjet printers to exfiltrate information from an air-gapped network. In essence, malware installed on a computer with access to a printer can inject certain imperceptible patterns into all documents being sent to the printer, so as to control the printing process in such a way that an acoustic signal is generated which can be captured with a nearby smartphone.
 
@@ -19,7 +19,7 @@ To download with the submodules use the next command: `git clone --recurse-submo
 
 ## How to obtain the results shown in the paper
 
-1. Download all the samples [here](https://drive.google.com/file/d/1i4jgTm4fGE4vT6IUTMaa1_sHq3aUKbgj/view?usp=sharing). 
+1. Download all the samples [here](https://drive.google.com/file/d/1t_86g_xM_IdVnexTRP-ofNn5NBgw28pK/view?usp=sharing). 
 
 2. Extract the samples on *receiver/MATLAB/samples2/good/*
 
@@ -68,3 +68,10 @@ To download with the submodules use the next command: `git clone --recurse-submo
 - Once you think you got correct all parameters, you can use the progam *patternInjection/randomBits.sh* with any quantity of pages to inject random patterns into them.
 
 
+## Programs included in this repository
+
+- As described above, all types of programs to obtain the necessary transmitter and receiver parameters, apply them and process the results are contained in *patternInjection* and *receiver/MATLAB* folders.
+
+- An Android app is included in *receiver/PrinterLeaks* that does exactly the same as the MATLAB scripts.
+
+- In *receiver/filter* both the actual implementation of a CUPS filter that injects the malicious patterns into documents and the filter that defends against this are included.
