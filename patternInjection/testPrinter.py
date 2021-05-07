@@ -51,43 +51,7 @@ def to_manchester(pattern):
         return new_pattern
         
         
-def blank(parameters, packet):
-        global total, max_length
-        offset = parameters['line_offset'] #offset between lines, the unit is points
-        length = parameters['line_length'] #length of the short line, the length of the long line is supposed to be the largest possible in a letter sized page (594)
 
-        if('blank_total' in parameters):
-                total = parameters['blank_total']
-                
-        short_alignment = parameters['short_alignment'] #The short line can be aligned to the 'center', 'left' or 'right'
-
-        
-        if(short_alignment == "left"):
-                left_margin = 9
-        elif(short_alignment == "center"):
-                left_margin = int((max_length+9-length)/2)
-        elif(short_alignment == "right"):
-                left_margin = max_length+9 - length
-                
-                
-        guard_init = parameters['guard_init'] #Modulation may require an initial line that separates the data transmission from the initial printer procedures. You can specify how many initial lines to separate your data lines.
-        
-        if(guard_init > 0):
-                for i in range(guard_init):
-                        add_shape(9, total, max_length, 1)
-                        total -= offset
-                
-        for bitidx in packet:
-
-                if(not int(bitidx)):
-                                add_shape(left_margin, total, length, 1)
-                else:
-                        add_shape(9, total, max_length, 1)
-                
-                total -= offset
-                
-        if(parameters['guard_end']):
-                add_shape(9, total, max_length, 1)#A final "guard" line is added so as to make sure the last time offset falls between individual roller pulses and not with respect to the random noises that the printer makes when it finishes printing a page
         
 def text(parameters, packet):
         global total, max_length
@@ -118,12 +82,10 @@ def text(parameters, packet):
                                 
                         total -= rec_width
                         add_shape(rec_left_margin2, total, rec_line_length2, rec_width)
-                                        #add_shape(300, total, 1, rec_width2)
                                                 
                 
                 else:
                        
-                        #For Canon, problems when there is no initial padding
                         if(special_transition and j + 1 < len(packet) and packet[j:j+2] == "10" and j):
                                 
                                 total -= rec_width/2.0
@@ -230,18 +192,7 @@ def testLength(parameters):
         else:
             add_shape(9, total, factor, step_size)
         print("f\nQ\n")
-        """
-        total -= parameters['initial_offset'] + parameters['rec_width']
-        add_shape(9, total, line_length, parameters['initial_offset'] + parameters['rec_width'])
-        
-        step_size = parameters['rec_width']*10
-        
-        #for i in range(2):
-        total -= step_size
-        line_length -= factor
-        add_shape(9+factor, total, line_length, step_size)
-        """
-        
+
 
 
 def printer_parameters(key): #Remember to define your printer name below in printer_name_list
@@ -256,29 +207,21 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = 1
                 
                 #Text
-                parameters['rec_width'] = 38.4#33#33#35.0 Cambiar a menos
+                parameters['rec_width'] = 38.4
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_left_margin2'] = 590 #550
-                parameters['rec_line_length2'] = 13 #53
-                parameters['initial_offset'] = 21.12#20.04
+                parameters['rec_left_margin2'] = 590 
+                parameters['rec_line_length2'] = 13 
+                parameters['initial_offset'] = 21.12
                 parameters['special_transition'] = False
                 parameters['yellow_shade_text'] = 0.94
-                parameters['packet_size_text'] = 14#11
-                parameters['text_guard_init'] = 1 #cambie esto add more??
+                parameters['packet_size_text'] = 14
+                parameters['text_guard_init'] = 1 
                 parameters['transition_factor'] = 2.0
                 
                 
 
                 
-                #Blank        
-                parameters['line_length'] = 10
-                parameters['line_offset'] = 27.0 #Could be adjusted to 21.0
-                parameters['short_alignment'] = "left"
-                parameters['guard_init'] = 1
-                parameters['blank_total'] = 781
-                parameters['yellow_shade_blank'] = 0.94
-                parameters['packet_size_blank'] = 25
                 
         elif(key == 1): #Epson_L4150
         
@@ -286,27 +229,20 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = 1
                 
                 #Text
-                parameters['rec_width'] = 46.4#23.2#35#33#35.0
+                parameters['rec_width'] = 46.4
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_left_margin2'] = 9 #550
-                parameters['rec_line_length2'] = 3 #53
+                parameters['rec_left_margin2'] = 9 
+                parameters['rec_line_length2'] = 3 
                 parameters['initial_offset'] = 45
-                parameters['special_transition'] = False#True
+                parameters['special_transition'] = False
                 parameters['yellow_shade_text'] = 0.99
-                parameters['packet_size_text'] = 14#11
+                parameters['packet_size_text'] = 14
                 parameters['text_guard_init'] = 1
                 parameters['transition_factor'] = 2.0
-                #parameters['text_total'] = 600
+
 
                 
-                #Blank        
-                parameters['line_length'] = 50
-                parameters['line_offset'] = 24.0
-                parameters['short_alignment'] = "right"
-                parameters['guard_init'] = 0
-                parameters['yellow_shade_blank'] = 0.97
-                parameters['packet_size_blank'] = 32
                 
         elif(key == 2): #HP_Photosmart_D110
             
@@ -361,28 +297,21 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 parameters['guard_end'] = 1
                 
                 #Text
-                parameters['rec_width'] = 22.8#11.4
+                parameters['rec_width'] = 22.8
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_left_margin2'] = 560#583#601#560
-                parameters['rec_line_length2'] = 43#20#2#43
-                parameters['initial_offset'] = 30.72#79#67.6#30.73
+                parameters['rec_left_margin2'] = 560
+                parameters['rec_line_length2'] = 43
+                parameters['initial_offset'] = 30.72
                 parameters['special_transition'] = True
                 parameters['yellow_shade_text'] = 0.98
-                parameters['packet_size_text'] = 16#20#20#20
-                parameters['text_guard_init'] = 2 #2
+                parameters['packet_size_text'] = 16
+                parameters['text_guard_init'] = 2 
                 parameters['transition_factor'] = 1.0
         
 
                 
                 
-                #Blank        
-                parameters['line_length'] = 10
-                parameters['line_offset'] = 25.0
-                parameters['short_alignment'] = "center"
-                parameters['guard_init'] = 2
-                parameters['yellow_shade_blank'] = 0.98
-                parameters['packet_size_blank'] = 29 #Not sure about this one, still needs testing
                 
         elif(key == 4): #HP_Envy
         
@@ -391,25 +320,17 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 #Text
                 parameters['use_rectangles'] = True
                 parameters['use_only_rectangles'] = True
-                parameters['rec_width'] = 24#25#30#35.0
+                parameters['rec_width'] = 24
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_width2'] = 100#95#90#60.0
-                parameters['rec_left_margin2'] = 590 #550
-                parameters['rec_line_length2'] = 13 #53
+                parameters['rec_width2'] = 100
+                parameters['rec_left_margin2'] = 590 
+                parameters['rec_line_length2'] = 13 
 
                 parameters['yellow_shade_text'] = 0.98
-                parameters['packet_size_text'] = 10#11
+                parameters['packet_size_text'] = 10
                 parameters['text_guard_init'] = 0
                 
-                #Blank        
-                parameters['line_length'] = 10
-                parameters['line_offset'] = 27.0 #Could be adjusted to 21.0
-                parameters['short_alignment'] = "left"
-                parameters['guard_init'] = 1
-                parameters['blank_total'] = 781
-                parameters['yellow_shade_blank'] = 0.94
-                parameters['packet_size_blank'] = 25
                 
         elif(key == 5): #Test
                 
@@ -418,53 +339,38 @@ def printer_parameters(key): #Remember to define your printer name below in prin
                 #Text
                 parameters['use_rectangles'] = True
                 parameters['use_only_rectangles'] = True
-                parameters['rec_width'] = 33#35.0
+                parameters['rec_width'] = 33
                 parameters['rec_left_margin'] = 9
                 parameters['rec_line_length'] = 594
-                parameters['rec_width2'] = 56#60.0
-                parameters['rec_left_margin2'] = 590 #550
-                parameters['rec_line_length2'] = 13 #53
+                parameters['rec_width2'] = 56
+                parameters['rec_left_margin2'] = 590 
+                parameters['rec_line_length2'] = 13 
 
                 parameters['yellow_shade_text'] = 0.94
-                parameters['packet_size_text'] = 10#11
+                parameters['packet_size_text'] = 10
                 parameters['text_guard_init'] = 0
                 
-                #Blank        
-                parameters['line_length'] = 10
-                parameters['line_offset'] = 27.0 #Could be adjusted to 21.0
-                parameters['short_alignment'] = "left"
-                parameters['guard_init'] = 1
-                parameters['blank_total'] = 781
-                parameters['yellow_shade_blank'] = 0.94
-                parameters['packet_size_blank'] = 25
                
         """ 
         Template for new printers, add your printer name in printer_name_list
        
         elif(key == 4): #Printer name
         
-                parameters['guard_end'] = True
-                
-                #Text
-                parameters['rec_width'] = 25.0
-                parameters['cluster_width'] = 32.0
-                parameters['cluster_lines'] = 10
-                parameters['cluster_width_after_rec'] = 21.0
-                parameters['cluster_lines_after_rec'] = 5
-                parameters['cluster_left_margin'] = 9
-                parameters['cluster_line_length'] = 594
-                parameters['custom_space_rules_rec'] = False
-                parameters['extra_cluster_line'] = False
-                parameters['yellow_shade_text'] = 0.99
-                parameters['packet_size_text'] = 15
+                parameters['guard_end'] = 1
         
-                #Blank        
-                parameters['line_length'] = 100
-                parameters['line_offset'] = 25.0
-                parameters['short_alignment'] = "center"
-                parameters['guard_init'] = 0
-                parameters['yellow_shade_blank'] = 0.99
-                parameters['packet_size_blank'] = 30
+                #Text
+                parameters['use_rectangles'] = True
+                parameters['use_only_rectangles'] = True
+                parameters['rec_width'] = 33
+                parameters['rec_left_margin'] = 9
+                parameters['rec_line_length'] = 594
+                parameters['rec_width2'] = 56
+                parameters['rec_left_margin2'] = 590 
+                parameters['rec_line_length2'] = 13 
+
+                parameters['yellow_shade_text'] = 0.94
+                parameters['packet_size_text'] = 10
+                parameters['text_guard_init'] = 0
         """
                 
         return parameters
@@ -479,8 +385,6 @@ def get_parity_bit(pattern):
 
         return parity
 
-
-textmod = False
 raw_mode = False
 info_bits = False
 show_image = False
@@ -521,11 +425,9 @@ preamble = "1010" #Preamble to all packets
 max_length = 594 #Maximum line length with respect to the width of the page and its margins
 overhead = 5
 
-opts, args = getopt.getopt(sys.argv[1:], "L:SCTmsiItrp:")
+opts, args = getopt.getopt(sys.argv[1:], "L:SCTmsiIrp:")
 for opt, arg in opts:
-        if opt == '-t':
-                textmod = True
-        elif opt == '-p':
+        if opt == '-p':
                 pattern = str(arg)
         elif opt == '-r':
                 raw_mode = True
@@ -569,51 +471,34 @@ for opt, arg in opts:
                 
                 
 if(info_bits):
-        if(textmod):
-                print(parameters['packet_size_text']-overhead)
-        else:
-                print(parameters['packet_size_blank']-overhead)
-        exit()
+        print(parameters['packet_size_text']-overhead)
 
 
-if(textmod):
+
         
-        yellow_shade = parameters['yellow_shade_text'] #this can go from 0 to 1.0, where 0 is completly yellow and 1.0 absence of yellow
-        print("q\n1.0 1.0", yellow_shade, "rg") 
+yellow_shade = parameters['yellow_shade_text'] #this can go from 0 to 1.0, where 0 is completly yellow and 1.0 absence of yellow
+print("q\n1.0 1.0", yellow_shade, "rg") 
+
+if(not raw_mode): #modificar para manchester
+        sz = parameters['packet_size_text']
+        if(len(pattern) < sz-overhead):
+                print("(ERROR) Bit pattern should be greater than:", sz)
+                exit(1)
         
-        if(not raw_mode): #modificar para manchester
-                sz = parameters['packet_size_text']
-                if(len(pattern) < sz-overhead):
-                        print("(ERROR) Bit pattern should be greater than:", sz)
-                        exit(1)
+        parity = get_parity_bit(pattern[0:sz-overhead])
+        packet = pattern[0:sz-overhead] + str(parity)
+        
+        if(manchester):
+                packet = to_manchester(packet)
                 
-                parity = get_parity_bit(pattern[0:sz-overhead])
-                packet = pattern[0:sz-overhead] + str(parity)
-                
-                if(manchester):
-                        packet = to_manchester(packet)
-                        
-                text(parameters, preamble + packet)
-        else:
-                packet = pattern
-                
-                if(manchester):
-                        packet = to_manchester(packet)
-                text(parameters, packet)
+        text(parameters, preamble + packet)
 else:
+        packet = pattern
         
-        yellow_shade = parameters['yellow_shade_blank']
-        print("q\n1.0 1.0", yellow_shade, "rg")
-        
-        if(not raw_mode):
-                sz = parameters['packet_size_blank']
-                if(len(pattern) < sz-5):
-                        print("(ERROR) Bit pattern should be greater than:", sz)
-                        exit(1)
-                parity = get_parity_bit(pattern[0:sz-5])
-                blank(parameters, preamble + pattern[0:sz-5] + str(parity))
-        else:
-                blank(parameters, pattern)
+        if(manchester):
+                packet = to_manchester(packet)
+        text(parameters, packet)
+
 
 
 #add_defense()

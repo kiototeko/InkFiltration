@@ -4,12 +4,11 @@ if [ "$#" -lt 2 ]; then
 	echo "Wrong number of paramenters. Usage: raw_injection.sh [options] printer bit_pattern"
 	echo "Use this function to inject a specified bit pattern of any size into a pdf document according to a specific printer"
 	echo -e "Current defined printers: $(python3 ./testPrinter.py -l)"
-	echo -e "Options:\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)\n -b : Make less black the text on a document\n -I : display a graphical representation of the desired pattern\n -m : apply manchester coding\n -r [file] : raw mode, specify raw patterns on file"
+	echo -e "Options:\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)\n -b : Make less black the text on a document\n -I : display a graphical representation of the desired pattern\n -m : apply manchester coding\n -r [file] : raw mode, specify raw patterns on file\n -w [width] : when testing for rectangle's widths, use this option with -r - to print a single rectangle with a specific width"
 	exit 1
 fi
 
 FILE_IN="Layouts/simpleLayoutBlank.pdf"
-TEXT=""
 LESS_BLACK=""
 DISPLAY_IMAGE=""
 MANCHESTER=""
@@ -18,11 +17,8 @@ CHANGE_WIDTH=""
 
 ARGUMENTS=(${@: -2})
 
-while getopts "tmbIf:r:w:" arg; do
+while getopts "mbIf:r:w:" arg; do
 	case ${arg} in
-		t ) 
-		TEXT="yes"
-		;;
 		f ) 
 		FILE_IN="${OPTARG}"
 		;;
@@ -51,15 +47,15 @@ cp Layouts/whitePDF.pdf.old Layouts/whitePDF.pdf
 FINAL=${ARGUMENTS[1]}
 PRINTER=${ARGUMENTS[0]}
 
-if [ -n "$TEXT" ]; then
-	AKA=$($PEEPDF -C 'search "/Type /Page"'  $FILE_IN | cut -f1 -d$'\x1b')
-	AKA2=$(echo -n $AKA | tr -d '[]')
-	IFS=', ' read -r -a array <<< $AKA2
-	AKA=$($PEEPDF -C 'search "/Type /Pages"'  $FILE_IN | cut -f1 -d$'\x1b')
-	AKA2=$(echo -n $AKA | tr -d '[]')
-	array=( ${array[@]/$AKA2} )
-	pdftk $FILE_IN cat 1 output Layouts/whitePDF.pdf
-fi
+
+AKA=$($PEEPDF -C 'search "/Type /Page"'  $FILE_IN | cut -f1 -d$'\x1b')
+AKA2=$(echo -n $AKA | tr -d '[]')
+IFS=', ' read -r -a array <<< $AKA2
+AKA=$($PEEPDF -C 'search "/Type /Pages"'  $FILE_IN | cut -f1 -d$'\x1b')
+AKA2=$(echo -n $AKA | tr -d '[]')
+array=( ${array[@]/$AKA2} )
+pdftk $FILE_IN cat 1 output Layouts/whitePDF.pdf
+
 
 AKA=$($PEEPDF -C 'search "/Type /Page"'  Layouts/whitePDF.pdf | cut -f1 -d$'\x1b')
 AKA2=$(echo -n $AKA | tr -d '[]')
@@ -75,44 +71,34 @@ echo -e "\nSUCCESSFUL INJECTION (testPDF.pdf)----------------\n"
 
 if [ -z "$RAW" ]; then
 
-        if [ -z "$TEXT" ]; then
-                python3 ./testPrinter.py $MANCHESTER -rp $FINAL $PRINTER > randomStream
-                cat randomStream
-                
-                if [ -n "$DISPLAY_IMAGE" ]; then
-                
-                python3 ./testPrinter.py $MANCHESTER -rIp $FINAL $PRINTER > /dev/null
-                
-                fi
 
+        AKA3=$($PEEPDF -C "object ${array[0]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
+        STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
+
+        python3 ./testPrinter.py $MANCHESTER -rt -p $FINAL $PRINTER > randomStream
+        cat randomStream
+        
+        if [ -n "$DISPLAY_IMAGE" ]; then
+        
+        python3 ./testPrinter.py $MANCHESTER -rtIp $FINAL $PRINTER > /dev/null
+        
+        fi
+
+        if [ -n "$LESS_BLACK" ] || [ $PRINTER = "Epson_L4150" ] || [ $PRINTER = "Canon_MG2410" ]; then
+                echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream
+                #echo "$STREAM" | sed 's/0 0 0 rg/1.0 1.0 0.975 rg/; s/0 0 0 RG/0.01 G/' >> randomStream
         else
-                AKA3=$($PEEPDF -C "object ${array[0]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
-                STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
+                echo "$STREAM" >> randomStream
+        fi
 
-                python3 ./testPrinter.py $MANCHESTER -rt -p $FINAL $PRINTER > randomStream
-                cat randomStream
-                
-                if [ -n "$DISPLAY_IMAGE" ]; then
-                
-                python3 ./testPrinter.py $MANCHESTER -rtIp $FINAL $PRINTER > /dev/null
-                
-                fi
-
-                if [ -n "$LESS_BLACK" ] || [ $PRINTER = "Epson_L4150" ] || [ $PRINTER = "Canon_MG2410" ]; then
-                        echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream
-                        #echo "$STREAM" | sed 's/0 0 0 rg/1.0 1.0 0.975 rg/; s/0 0 0 RG/0.01 G/' >> randomStream
-                else
-                        echo "$STREAM" >> randomStream
-                fi
-
-        fi		
+        	
 
 else
         if [ -z "$CHANGE_WIDTH" ]; then
                 cat $RAW | tee randomStream
         else
                 START=$(python -c "print(783 - $CHANGE_WIDTH)")
-                echo -ne "q\n1 1 0.98 rg\n9 $START 594 $CHANGE_WIDTH re\nf\nQ\n" | tee randomStream
+                echo -ne "q\n1 1 0.94 rg\n9 $START 594 $CHANGE_WIDTH re\nf\nQ\n" | tee randomStream
         fi
         echo
         

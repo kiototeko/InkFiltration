@@ -8,12 +8,11 @@ if [ "$#" -lt 2 ]; then
 	echo "Wrong number of paramenters. Usage: randomBits.sh [options] printer pages"
 	echo "Use this function to generate random bit patterns that are injected into 'pages' number of pages of a PDF file ready to be printed by a 'printer'. By default the program injects the patterns into a PDF file with white pages"
 	echo -e "Current defined printers: $(python3 ./testPrinter.py -l)"
-	echo -e "Options:\n -l : reuse previous random bit patterns\n -t : use text modulation\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)\n -o : instead of random bits, create a sequence that increases in value and starts with zero"
+	echo -e "Options:\n -l : reuse previous random bit patterns\n -f [file] : PDF file to be injected with patterns (by default it injects to a blank document)\n -o : instead of random bits, create a sequence that increases in value and starts with zero"
 	exit 1
 fi
 
 LOAD=""
-TEXT=""
 ORDERED=""
 FILE_IN="Layouts/simpleLayoutBlank.pdf"
 
@@ -21,13 +20,10 @@ FILE_IN="Layouts/simpleLayoutBlank.pdf"
 ARGUMENTS=(${@: -2})
 
 
-while getopts "lotf:" arg; do
+while getopts "lof:" arg; do
 	case ${arg} in
 		l ) 
 		LOAD="y"
-		;;
-		t ) 
-		TEXT="text"
 		;;
 		f ) 
 		FILE_IN="${OPTARG}"
@@ -53,22 +49,20 @@ if [ $PRINTER = "HP_Deskjet_1115" ]; then
 fi
 '
 
-if [ -n "$TEXT" ]; then
-	AKA=$($PEEPDF -C 'search "/Type /Page"'  $FILE_IN | cut -f1 -d$'\x1b')
-	AKA2=$(echo -n $AKA | tr -d '[]')
-	IFS=', ' read -r -a array <<< $AKA2
-	AKA=$($PEEPDF -C 'search "/Type /Pages"'  $FILE_IN | cut -f1 -d$'\x1b')
-	AKA2=$(echo -n $AKA | tr -d '[]')
-	array=( ${array[@]/$AKA2} )
-	pdftk $FILE_IN cat 1 output Layouts/whitePDF.pdf
 
-	NUM_BITS=$(python3 ./testPrinter.py $MANCHESTER -ti $PRINTER)
+AKA=$($PEEPDF -C 'search "/Type /Page"'  $FILE_IN | cut -f1 -d$'\x1b')
+AKA2=$(echo -n $AKA | tr -d '[]')
+IFS=', ' read -r -a array <<< $AKA2
+AKA=$($PEEPDF -C 'search "/Type /Pages"'  $FILE_IN | cut -f1 -d$'\x1b')
+AKA2=$(echo -n $AKA | tr -d '[]')
+array=( ${array[@]/$AKA2} )
+pdftk $FILE_IN cat 1 output Layouts/whitePDF.pdf
 
-else
-	NUM_BITS=$(python3 ./testPrinter.py -i $PRINTER)
-fi
+NUM_BITS=$(python3 ./testPrinter.py $MANCHESTER -ti $PRINTER)
 
-FILE_BITS="../receiver/MATLAB/payloads/${PRINTER}_${NUM_BITS}_${NUM_PAGES}${TEXT}_bits"
+
+
+FILE_BITS="../receiver/MATLAB/payloads/${PRINTER}_${NUM_BITS}_${NUM_PAGES}text_bits"
 
 
 #if [ -n "$LOAD" ]; then
@@ -120,24 +114,21 @@ do
 
 	
 	#echo $FINAL
-	if [ -z "$TEXT" ]; then
-		python3 ./testPrinter.py -p $FINAL $PRINTER > randomStream
+	
+        AKA3=$($PEEPDF -C "object ${array[$(($j-1))]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
+        STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
 
-	else
-	        AKA3=$($PEEPDF -C "object ${array[$(($j-1))]}" $FILE_IN | grep -oE "/Contents\s[0-9]+" | cut -f2 -d" ")
-	        STREAM=$($PEEPDF -C "stream $AKA3" $FILE_IN | cut -f1 -d$'\x1b')
+        python3 ./testPrinter.py $MANCHESTER -t -p $FINAL $PRINTER > randomStream
 
-		python3 ./testPrinter.py $MANCHESTER -t -p $FINAL $PRINTER > randomStream
+        if [ $PRINTER = "Epson_L4150" ]; then
+                echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream			
+        elif [ $PRINTER = "Canon_MG2410" ]; then
+                echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream			
+        else
+                echo "$STREAM" >> randomStream
+        fi
 
-		if [ $PRINTER = "Epson_L4150" ]; then
-			echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream			
-		elif [ $PRINTER = "Canon_MG2410" ]; then
-			echo "$STREAM" | sed 's/0 0 0 rg/0.01 g/; s/0 0 0 RG/0.01 G/' >> randomStream			
-		else
-			echo "$STREAM" >> randomStream
-		fi
-
-	fi		
+			
 
 	$PEEPDF -s randomScript Layouts/whitePDF.pdf > log
 
