@@ -1,4 +1,4 @@
-function [p,c] = getPeaksPre(y, sample, window, minH)
+function p = getPeaksPre(y, sample, window, minH)
 
 
 Wp = [3500 6000]/(44100/2);

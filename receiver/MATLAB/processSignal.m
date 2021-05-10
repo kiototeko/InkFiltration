@@ -24,10 +24,10 @@ end
 
 parameter = getParameter(class, type);
 
-peaks_pre = obtainPeaksLocation(y, class, parameter, type, Fs, 1);
-peaks = obtainPeaksLocation(y, class, parameter, type, Fs, 0);
-[bits,limits] = peaks2bits(type,class,parameter,peaks_pre,peaks, debug);
-[num_bits] = bits2packets(bits, limits, type, parameter, filename, num_packets, debug);
+peaks_pre = obtainPeaksLocation(y, class, parameter, Fs, 1);
+peaks = obtainPeaksLocation(y, class, parameter, Fs, 0);
+bits = peaks2bits(type,class,parameter,peaks_pre,peaks, debug);
+num_bits = bits2packets(bits, parameter, filename, num_packets, debug);
 
 true_bits = num_bits/((parameter.szbits-1)*num_packets);
 

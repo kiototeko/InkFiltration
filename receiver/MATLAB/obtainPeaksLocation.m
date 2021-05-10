@@ -1,4 +1,4 @@
-function peaks = obtainPeaksLocation(y,class, parameter, type, Fs, pre)
+function peaks = obtainPeaksLocation(y,class, parameter, Fs, pre)
 
     if(pre) %Loads the sample used to detect packet boundaries
         sample_variable = strcat('sampleC', num2str(class), "Text");
@@ -23,12 +23,14 @@ function peaks = obtainPeaksLocation(y,class, parameter, type, Fs, pre)
                 locs = getPeaksPre(remnant, eval(sample_variable), parameter.env_window, parameter.preminH);
             else
                 locs = getPeaks(remnant,parameter.minH, parameter.env_window, parameter.lofrec,parameter.hifrec,parameter.peakdis);
+                %locs = getPeaksA(remnant,parameter.minH, parameter.env_window, class,parameter.peakdis);
             end
         else
             if(pre)
                 locs = getPeaksPre(y(lowerBound:n*window-overlap*(n-1)), eval(sample_variable), parameter.env_window, parameter.preminH);
             else
                 locs = getPeaks(y(lowerBound:n*window-overlap*(n-1)), parameter.minH, parameter.env_window, parameter.lofrec,parameter.hifrec,parameter.peakdis);
+                %locs = getPeaksA(y(lowerBound:n*window-overlap*(n-1)), parameter.minH, parameter.env_window, class,parameter.peakdis);
             end
         end
         

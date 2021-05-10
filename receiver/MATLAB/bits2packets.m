@@ -1,4 +1,4 @@
-function [num_bits,num_packets_rec] = bits2packets(bits, limits, type, parameter, filename, real_num_packets, debug)
+function [num_bits,num_packets_rec] = bits2packets(bits, parameter, filename, real_num_packets, debug)
 
 previdx3 = 1;
 

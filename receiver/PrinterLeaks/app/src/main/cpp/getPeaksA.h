@@ -5,7 +5,7 @@
 // File: getPeaksA.h
 //
 // MATLAB Coder version            : 5.0
-// C/C++ source code generated on  : 13-Oct-2020 20:04:12
+// C/C++ source code generated on  : 07-May-2021 23:24:34
 //
 #ifndef GETPEAKSA_H
 #define GETPEAKSA_H
@@ -17,8 +17,8 @@
 #include "getPeaksGlobal_types.h"
 
 // Function Declarations
-extern void getPeaksA(const double y[44100], double minH, int window, int
-                      printer, int peakdis, double p_data[], int p_size[1]);
+extern void getPeaksA(const double y[44100], double minH, double window, double
+                      printer, double peakdis, double p_data[], int p_size[1]);
 
 #endif
 

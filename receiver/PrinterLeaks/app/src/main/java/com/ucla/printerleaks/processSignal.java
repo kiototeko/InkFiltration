@@ -29,7 +29,7 @@ abstract public class processSignal {
     InputStream fileSample;
     printerParameters parameter;
     File audioFile;
-    int printer, type;
+    int printer;
     final int Fs = 44100;
 
     public native double[] getPeaksB(double[] a, double minH, int window, int printer, int peakdis);
@@ -39,18 +39,18 @@ abstract public class processSignal {
     static protected class printerParameters {
         public double limitL1, limitL2, limitH1, limitH2, minH;
         public int env_window, preminH, peakdis;
-        public double szbits, hi_limit, prelimit, limitI;
+        public double szbits, prelimit;
+        public boolean blank;
     }
 
-    processSignal(int type, int printer, File audioFile, InputStream fileSample) {
+    processSignal(int printer, File audioFile, InputStream fileSample) {
         this.audioFile = audioFile;
         this.printer = printer;
-        this.type = type;
         this.fileSample = fileSample;
         this.parameter = new printerParameters();
     }
 
-    protected abstract Pair<List<Integer>, List<Integer>> peaks2bits(List<Double> peaks_pre, List<Double> peaks);
+    protected abstract List<Integer> peaks2bits(List<Double> peaks_pre, List<Double> peaks);
 
 
     public int getPayloadSize() {
@@ -58,7 +58,7 @@ abstract public class processSignal {
     }
 
     public void setParameter(double limitH1, double limitH2, double limitL1, double limitL2,
-                             int preminH, double prelimit, double minH, double szbits, int peakdis, int env_window, double hi_limit) {
+                             int preminH, double prelimit, double minH, double szbits, int peakdis, int env_window, boolean blank) {
         parameter.limitH1 = limitH1;
         parameter.limitH2 = limitH2;
         parameter.limitL1 = limitL1;
@@ -69,23 +69,9 @@ abstract public class processSignal {
         parameter.szbits = szbits;
         parameter.peakdis = peakdis;
         parameter.env_window = env_window;
-        parameter.hi_limit = hi_limit;
+        parameter.blank = blank;
     }
 
-    public void setParameter(double limitH1, double limitH2, double limitL1, double limitL2, double limitI,
-                             int preminH, double prelimit, double minH, double szbits, int peakdis, int env_window) {
-        parameter.limitH1 = limitH1;
-        parameter.limitH2 = limitH2;
-        parameter.limitL1 = limitL1;
-        parameter.limitL2 = limitL2;
-        parameter.limitI = limitI;
-        parameter.preminH = preminH;
-        parameter.prelimit = prelimit;
-        parameter.minH = minH;
-        parameter.szbits = szbits;
-        parameter.peakdis = peakdis;
-        parameter.env_window = env_window;
-    }
 
     public printerParameters getParameter() {
         return parameter;
@@ -94,12 +80,12 @@ abstract public class processSignal {
     private double[] readFileCSV() throws IOException {
 
 
-        final int lineSz = 179;
+        final int lineSz = 179; //Maximum sample size
         double[] sample = new double[lineSz];
         String eachline = "";
 
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileSample));
-        for (int i = 0; i <= (printer - 1) * 2 + (type - 1); i++) {
+        for (int i = 0; i < printer; i++) {
             eachline = bufferedReader.readLine();
         }
         String[] words = eachline.split(",");
@@ -246,7 +232,7 @@ abstract public class processSignal {
                     getFloats(frames_temp, remnantRaw, remaining_sz*2);
                     System.arraycopy(frames_temp, 0, remnant, overlap, remaining_sz);
                 } else {
-                      bytesObtained = window-overlap;
+                    bytesObtained = window-overlap;
                     in.read(remnantRaw, 0, bytesObtained*2);
                     getFloats(frames_temp, remnantRaw, bytesObtained*2);
 
@@ -260,11 +246,7 @@ abstract public class processSignal {
 
             }
             else{
-                if(printer == 3 && type == 1)
-                            locs = getPeaksB(remnant, parameter.minH, parameter.env_window, 1,parameter.peakdis); //for printer 3, when using DPPM, we should put another printer number (see getPeaksA.m)
-                else
-                            locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
-                            //locs = getPeaks(remnant, parameter.minH, parameter.env_window, parameter.peakdis);
+                locs = getPeaksB(remnant, parameter.minH, parameter.env_window, printer,parameter.peakdis);
             }
 
             for(double loc: locs) {
@@ -290,20 +272,20 @@ abstract public class processSignal {
         return peaks;
     }
 
-    private  List<Integer> bits2packets(List<Integer> bits, List<Integer> limits){ //falta limits para FPM-DPPM
+    private  List<Integer> bits2packets(List<Integer> bits){
 
         int idx = 0, idx2 = 0, parity;
         boolean done = false;
         List<Integer> true_bits = new ArrayList<>();
+        List<Integer> limits = new ArrayList<>();
 
-        if(type == 2){
-            limits = new ArrayList<>();
-            for (int i = 0; i < bits.size(); i++) {
-                if (bits.get(i).intValue() == -1) {
-                    limits.add(i);
-                }
+
+        for (int i = 0; i < bits.size(); i++) {
+            if (bits.get(i).intValue() == -1) {
+                limits.add(i);
             }
         }
+
 
         while(idx < bits.size() - parameter.szbits-4){
             if(idx2 < limits.size() && idx > limits.get(idx2)) {
@@ -351,14 +333,14 @@ abstract public class processSignal {
             List<Double> peaks = obtainPeaks(false);
             Log.i("Time elapsed", Long.toString(System.currentTimeMillis() - start));
             Log.i("Process", "Output obtainPeaks " + Integer.toString(peaks.size()));
-            Pair<List<Integer>, List<Integer>> res = peaks2bits(peaks_pre, peaks);
+            List<Integer> res = peaks2bits(peaks_pre, peaks);
 
-            String ress = "";
-            for(int i : res.first){
-                ress += Integer.toString(i);
+            StringBuilder ress = new StringBuilder();
+            for(int i : res){
+                ress.append(Integer.toString(i));
             }
             Log.i("Process", "Output peaks2bits " + ress);
-            bits = bits2packets(res.first, res.second);
+            bits = bits2packets(res);
             Log.i("Process", "End");
         }catch(Exception d){
             Log.i("processSignal", d.getMessage());

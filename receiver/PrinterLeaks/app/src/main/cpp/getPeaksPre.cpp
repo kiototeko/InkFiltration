@@ -5,7 +5,7 @@
 // File: getPeaksPre.cpp
 //
 // MATLAB Coder version            : 5.0
-// C/C++ source code generated on  : 13-Oct-2020 20:04:12
+// C/C++ source code generated on  : 07-May-2021 23:24:34
 //
 
 // Include Files
@@ -24,14 +24,14 @@
 //
 // Arguments    : const double y[529200]
 //                const double sample[179]
-//                int window
-//                int minH
+//                double window
+//                double minH
 //                double p_data[]
 //                int p_size[2]
 // Return Type  : void
 //
-void getPeaksPre(const double y[529200], const double sample[179], int window,
-                 int minH, double p_data[], int p_size[2])
+void getPeaksPre(const double y[529200], const double sample[179], double window,
+                 double minH, double p_data[], int p_size[2])
 {
   static double yband[529200];
   static double ff[529200];

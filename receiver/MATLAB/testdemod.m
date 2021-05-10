@@ -145,7 +145,6 @@ if(~load_existing_param || bypass)
     
     parameter.limitI = 3; %used to ignore all time differences below that value
     
-    parameter.hi_limit = 2; %used to determine how many time differences between limitH1 and limitH2 to consider as bit 1 (FPM-DPPM)
 end
 
 
@@ -267,4 +266,30 @@ title("Windowed processed signal")
 peaks
 
 
+%% Write samples.mat as csv (for Android application)
 
+S = load("samples.mat");
+
+lens = [];
+
+for f = fieldnames(S)'
+   disp(['Field named: ' f{1} ]);
+   %disp('Has value ')
+   lens = [lens length(S.(f{1}))];
+end
+
+
+max_lens = max(lens);
+max_idx = find(max(lens));
+idx = 1;
+csvM = [];
+
+for f = fieldnames(S)'
+    if(max_idx ~= idx)
+        S.(f{1}) = [S.(f{1}); zeros(max_lens - length(S.(f{1})), 1)];
+    end
+    csvM(idx,:) = S.(f{1});
+    idx = idx + 1;
+end
+
+csvwrite('samples.csv', csvM);

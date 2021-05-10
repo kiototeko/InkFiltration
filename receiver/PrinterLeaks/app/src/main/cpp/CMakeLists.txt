@@ -34,7 +34,7 @@ add_library( # Sets the name of the library.
         )
 
 
-target_include_directories(native-lib PUBLIC /home/kiototeko/tareas/masterThesis/PrinterLeaks/app/src/main/cpp)
+target_include_directories(native-lib PUBLIC /home/kiototeko/tareas/masterThesis/printer/InkFiltration/receiver/PrinterLeaks/app/src/main/cpp)
 target_compile_definitions(native-lib PUBLIC -DCS_COMPLEX PUBLIC -DMODEL=getpeaks)
 
 # Searches for a specified prebuilt library and stores the path as a

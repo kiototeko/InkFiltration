@@ -5,7 +5,7 @@
 // File: findpeaks.cpp
 //
 // MATLAB Coder version            : 5.0
-// C/C++ source code generated on  : 13-Oct-2020 20:04:12
+// C/C++ source code generated on  : 07-May-2021 23:24:34
 //
 
 // Include Files
@@ -19,7 +19,7 @@
 
 // Function Declarations
 static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
-  iPk_data[], const int iPk_size[1], int Pd, int idx_data[], int idx_size[1]);
+  iPk_data[], const int iPk_size[1], double Pd, int idx_data[], int idx_size[1]);
 
 // Function Definitions
 
@@ -27,23 +27,23 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
 // Arguments    : const double y[45]
 //                const int iPk_data[]
 //                const int iPk_size[1]
-//                int Pd
+//                double Pd
 //                int idx_data[]
 //                int idx_size[1]
 // Return Type  : void
 //
 static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
-  iPk_data[], const int iPk_size[1], int Pd, int idx_data[], int idx_size[1])
+  iPk_data[], const int iPk_size[1], double Pd, int idx_data[], int idx_size[1])
 {
   int sortIdx_data[90];
   int k;
   signed char locs_temp_data[90];
   boolean_T idelete_data[90];
   int qEnd;
-  signed char tmp_data[90];
+  boolean_T tmp_data[90];
+  signed char b_tmp_data[90];
   int iwork_data[90];
-  boolean_T b_tmp_data[90];
-  if ((iPk_size[0] == 0) || (Pd == 0)) {
+  if ((iPk_size[0] == 0) || (Pd == 0.0)) {
     int n;
     if (iPk_size[0] < 1) {
       n = 0;
@@ -52,12 +52,12 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
     }
 
     if (n > 0) {
-      int i2;
+      int yk;
       sortIdx_data[0] = 1;
-      i2 = 1;
+      yk = 1;
       for (k = 2; k <= n; k++) {
-        i2++;
-        sortIdx_data[k - 1] = i2;
+        yk++;
+        sortIdx_data[k - 1] = yk;
       }
     }
 
@@ -68,23 +68,22 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
   } else {
     int n;
     int sortIdx_size_idx_0;
-    int i2;
+    int yk;
     int i;
-    int i1;
     int b_i;
+    int i2;
     int j;
-    int pEnd;
     n = iPk_size[0] + 1;
     sortIdx_size_idx_0 = static_cast<signed char>(iPk_size[0]);
-    i2 = static_cast<signed char>(iPk_size[0]);
-    if (0 <= i2 - 1) {
-      std::memset(&sortIdx_data[0], 0, i2 * sizeof(int));
+    yk = static_cast<signed char>(iPk_size[0]);
+    if (0 <= yk - 1) {
+      std::memset(&sortIdx_data[0], 0, yk * sizeof(int));
     }
 
     i = iPk_size[0] - 1;
     for (k = 1; k <= i; k += 2) {
-      i1 = iPk_data[k - 1] - 1;
-      if ((y[i1] >= y[iPk_data[k] - 1]) || rtIsNaN(y[i1])) {
+      yk = iPk_data[k - 1] - 1;
+      if ((y[yk] >= y[iPk_data[k] - 1]) || rtIsNaN(y[yk])) {
         sortIdx_data[k - 1] = k;
         sortIdx_data[k] = k + 1;
       } else {
@@ -101,7 +100,7 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
     while (b_i < n - 1) {
       i2 = b_i << 1;
       j = 1;
-      for (pEnd = b_i + 1; pEnd < n; pEnd = qEnd + b_i) {
+      for (int pEnd = b_i + 1; pEnd < n; pEnd = qEnd + b_i) {
         int p;
         int q;
         int kEnd;
@@ -116,8 +115,8 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
         kEnd = qEnd - j;
         while (k + 1 <= kEnd) {
           i = iPk_data[sortIdx_data[p] - 1] - 1;
-          i1 = sortIdx_data[q - 1];
-          if ((y[i] >= y[iPk_data[i1 - 1] - 1]) || rtIsNaN(y[i])) {
+          yk = sortIdx_data[q - 1];
+          if ((y[i] >= y[iPk_data[yk - 1] - 1]) || rtIsNaN(y[i])) {
             iwork_data[k] = sortIdx_data[p];
             p++;
             if (p + 1 == pEnd) {
@@ -128,7 +127,7 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
               }
             }
           } else {
-            iwork_data[k] = i1;
+            iwork_data[k] = yk;
             q++;
             if (q == qEnd) {
               while (p + 1 < pEnd) {
@@ -164,57 +163,37 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
     for (b_i = 0; b_i < sortIdx_size_idx_0; b_i++) {
       if (!idelete_data[b_i]) {
         double d;
+        double d1;
         i = static_cast<signed char>(static_cast<signed char>
           (iPk_data[sortIdx_data[b_i] - 1] - 1) + 1);
-        d = static_cast<double>(i) - static_cast<double>(Pd);
-        if (d < 2.147483648E+9) {
-          if (d >= -2.147483648E+9) {
-            i1 = static_cast<int>(d);
-          } else {
-            i1 = MIN_int32_T;
-          }
-        } else {
-          i1 = MAX_int32_T;
-        }
-
-        d = static_cast<double>(i) + static_cast<double>(Pd);
-        if (d < 2.147483648E+9) {
-          if (d >= -2.147483648E+9) {
-            i = static_cast<int>(d);
-          } else {
-            i = MIN_int32_T;
-          }
-        } else {
-          i = MAX_int32_T;
-        }
-
-        for (i2 = 0; i2 < sortIdx_size_idx_0; i2++) {
-          b_tmp_data[i2] = ((locs_temp_data[i2] >= i1) && (locs_temp_data[i2] <=
-            i));
+        d = static_cast<double>(i) - Pd;
+        d1 = static_cast<double>(i) + Pd;
+        for (i = 0; i < sortIdx_size_idx_0; i++) {
+          tmp_data[i] = ((locs_temp_data[i] >= d) && (locs_temp_data[i] <= d1));
         }
 
         for (i = 0; i < sortIdx_size_idx_0; i++) {
-          idelete_data[i] = (idelete_data[i] || b_tmp_data[i]);
+          idelete_data[i] = (idelete_data[i] || tmp_data[i]);
         }
 
         idelete_data[b_i] = false;
       }
     }
 
-    i2 = sortIdx_size_idx_0 - 1;
-    pEnd = 0;
+    yk = sortIdx_size_idx_0 - 1;
     j = 0;
-    for (b_i = 0; b_i <= i2; b_i++) {
+    i2 = 0;
+    for (b_i = 0; b_i <= yk; b_i++) {
       if (!idelete_data[b_i]) {
-        pEnd++;
-        tmp_data[j] = static_cast<signed char>(b_i + 1);
         j++;
+        b_tmp_data[i2] = static_cast<signed char>(b_i + 1);
+        i2++;
       }
     }
 
-    idx_size[0] = pEnd;
-    for (i = 0; i < pEnd; i++) {
-      idx_data[i] = sortIdx_data[tmp_data[i] - 1];
+    idx_size[0] = j;
+    for (i = 0; i < j; i++) {
+      idx_data[i] = sortIdx_data[b_tmp_data[i] - 1];
     }
 
     sort(idx_data, idx_size);
@@ -224,15 +203,16 @@ static void c_findPeaksSeparatedByMoreThanM(const double y[45], const int
 //
 // Arguments    : const double Yin[45]
 //                double varargin_2
-//                int varargin_4
+//                double varargin_4
 //                double Ypk_data[]
 //                int Ypk_size[1]
 //                double Xpk_data[]
 //                int Xpk_size[1]
 // Return Type  : void
 //
-void findpeaks(const double Yin[45], double varargin_2, int varargin_4, double
-               Ypk_data[], int Ypk_size[1], double Xpk_data[], int Xpk_size[1])
+void findpeaks(const double Yin[45], double varargin_2, double varargin_4,
+               double Ypk_data[], int Ypk_size[1], double Xpk_data[], int
+               Xpk_size[1])
 {
   int nPk;
   int nInf;

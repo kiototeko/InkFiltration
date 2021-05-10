@@ -14,12 +14,9 @@ end
 
 num_lo_pot = 0;
 num_hi_pot = 0;
-real_hi_count = 0;
 num_hi = 0;
 num_lo = 0;
-first_hi = 1;
 preidx = 1;
-flag28 = 0;
 flag26 = 0;
 new_packet = 0;
 not_par = 0;
@@ -87,7 +84,6 @@ for n=1:length(locs_diff)
 
            if class == 4
            %%{    
-               real_hi_count = real_hi_count + 1;
 
                if (~blank)
                    if num_hi > 0 && num_lo == 1 %Case 1
@@ -109,8 +105,6 @@ for n=1:length(locs_diff)
                        continue
                    end
 
-
-
                    if num_hi_pot %Case 3 cancel
                        num_hi = num_hi + 1;
                        if ~mod(num_hi,2)
@@ -128,7 +122,9 @@ for n=1:length(locs_diff)
                    end
                    num_lo_pot = 0;
                    num_hi_pot = 0;
-               else
+                   
+               else %If blank document
+                   
                    num_lo = 0;
                    num_hi = num_hi + 1;
                    if ~mod(num_hi,2)
@@ -137,40 +133,11 @@ for n=1:length(locs_diff)
                    continue;
                end
                %}
-
-           elseif class == 2
-               if locs_diff(n) >= 28 && locs_diff(n) < 29
-                   flag28 = 1;
-               else
-                   flag28 = 0;
-               end
            end
            %%{
 
-
-
-
            if num_hi > 0
-
-               if class == 2
-                   if ~flag26 && mod(num_lo,2) %(num_lo == 1 || (mod(num_lo,2) && locs_diff(n-1) < 28))%mod(num_lo,2) % o num_lo == 1
-                       bits = add_bit(bits, 0,0);
-                       if locs_diff(n) > 40
-                           num_hi = num_hi -1;
-                       end
-                   elseif flag26
-                       num_hi = num_hi +1;
-                       if ~mod(num_hi,2)
-                            bits = add_bit(bits, 1,0);
-                       end
-                   end
-                   flag26 = 0;
-               end
-
-               num_lo = 0;
-
-           elseif flag26 && flag28
-               num_lo = 0;
+                 num_lo = 0;
            end
            %}
            num_hi = num_hi +1;
@@ -178,7 +145,6 @@ for n=1:length(locs_diff)
 
            if ~mod(num_hi,2)
                 bits = add_bit(bits, 1,0);
-                first_hi = 0;
            end
 
        elseif class == 5
@@ -198,7 +164,6 @@ for n=1:length(locs_diff)
 
                continue
            end
-
 
 
            if new_packet
@@ -232,13 +197,12 @@ for n=1:length(locs_diff)
            if ~mod(num_hi,2)
                 bits = add_bit(bits, 1,0);
            end
-       else
+       else %Default
 
            num_lo = 0;
            num_hi = num_hi +1;
-           if num_hi >= parameter.hi_limit && first_hi
+           if ~mod(num_hi,2)
                 bits = add_bit(bits, 1,0);
-                first_hi = 0;
            end
        end
 
@@ -247,7 +211,7 @@ for n=1:length(locs_diff)
        if class == 4
            if(~blank)
                %%{
-               if num_hi == 1 || num_lo_pot %|| (flag16 && ~mod(num_hi,2))
+               if num_hi == 1 || num_lo_pot 
 
                    if num_lo_pot && num_hi == 1 %Case where a single high offset is before a 15 and before low offsets
                        bits = add_bit(bits, 1,0);
@@ -261,9 +225,8 @@ for n=1:length(locs_diff)
                %}
 
                num_lo_pot = 0;
-               real_hi_count = 0;
 
-           else
+           else %Blank
                if num_hi > 2 && ~mod(num_hi, 2)
                    bits = add_bit(bits, 0,1);
                end
@@ -305,9 +268,7 @@ for n=1:length(locs_diff)
 
 
        end
-       flag28 = 0;
        num_hi_pot = 0;
-       first_hi = 1;
        num_lo = num_lo + 1;
 
 
@@ -317,14 +278,12 @@ for n=1:length(locs_diff)
            if mod(num_lo,2)
                 bits = add_bit(bits, 0,0);
            end
-       else
-
+       else %Default
            if ~mod(num_lo,2)
                 bits = add_bit(bits, 0,0);
            end
 
        end
-
 
        num_hi = 0;
    end

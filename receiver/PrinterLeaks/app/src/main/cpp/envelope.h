@@ -5,7 +5,7 @@
 // File: envelope.h
 //
 // MATLAB Coder version            : 5.0
-// C/C++ source code generated on  : 13-Oct-2020 20:04:12
+// C/C++ source code generated on  : 07-May-2021 23:24:34
 //
 #ifndef ENVELOPE_H
 #define ENVELOPE_H
@@ -17,9 +17,9 @@
 #include "getPeaksGlobal_types.h"
 
 // Function Declarations
-extern void b_envelope(const double x[529200], int n, double upperEnv[529200],
+extern void b_envelope(const double x[529200], double n, double upperEnv[529200],
   double lowerEnv[529200]);
-extern void envelope(const double x[44100], int n, double upperEnv[44100],
+extern void envelope(const double x[44100], double n, double upperEnv[44100],
                      double lowerEnv[44100]);
 
 #endif

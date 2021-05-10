@@ -45,6 +45,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
 import android.util.Log;
+import android.util.Pair;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -106,12 +107,11 @@ public class MainActivity extends AppCompatActivity {
         checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_REQUEST_CODE);
         spinn = findViewById(R.id.choose_printer);
         List<String> categories = new ArrayList<String>();
-        categories.add(getString(R.string.hp_photo_d110_blank));
-        categories.add(getString(R.string.hp_photo_d110_text));
-        categories.add(getString(R.string.epson_l415_blank));
         categories.add(getString(R.string.epson_l415_text));
-        categories.add(getString(R.string.canon_mg2410_blank));
         categories.add(getString(R.string.canon_mg2410_text));
+        categories.add(getString(R.string.hp_envy_7855));
+        categories.add(getString(R.string.hp_deskjet_1115_blank));
+        categories.add(getString(R.string.hp_deskjet_1115_text));
 
 
 
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
             tv.setText("");
             pay.setText("Recording");
             ExecutorService es = Executors.newFixedThreadPool(1);
-            es.execute(new ProcessAudio(ProcessAudio.RECORD_PROCESS, spinn.getSelectedItemPosition()));
+            es.execute(new ProcessAudio(ProcessAudio.RECORD_PROCESS, (String) spinn.getSelectedItem()));
         }
     }
 
@@ -188,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public void recordProcessAudio(final int printer){
+    public void recordProcessAudio(final String printer){
 
         try {
             recorder.prepare();
@@ -207,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public void fileProcessAudio(int printer){
+    public void fileProcessAudio(String printer){
 
         processSignal proc;
 
@@ -236,13 +236,11 @@ public class MainActivity extends AppCompatActivity {
             Log.i("mediaCodec", "media");
         }
 //
-        int printer2 = (int) Math.floor(printer/2.0)+1;
-        int type = (int) printer % 2 + 1;
+        Pair<Integer, Boolean> printer_info = printer2Class(printer);
         InputStream databaseInputStream = getResources().openRawResource(R.raw.samples);
-        if(type == 1)
-            proc = new processSignalBlank(printer2, f, databaseInputStream);
-        else
-            proc = new processSignalText(printer2, f, databaseInputStream);
+
+        proc = new processSignalText(printer_info.first, f, databaseInputStream, printer_info.second);
+
 
         payload = proc.process();
         payload_sz = proc.getPayloadSize();
@@ -256,6 +254,26 @@ public class MainActivity extends AppCompatActivity {
         Log.i("payload", payload);
 
     }
+
+    public Pair<Integer,Boolean> printer2Class(String printer) {
+        int printerclass = 0;
+        boolean blank = false;
+
+        if (printer.equals(getString(R.string.epson_l415_text)))
+            printerclass = 2;
+        else if (printer.equals(getString(R.string.canon_mg2410_text)))
+            printerclass = 3;
+        else if (printer.equals(getString(R.string.hp_deskjet_1115_text)) || printer.equals(getString(R.string.hp_deskjet_1115_blank))) {
+            printerclass = 4;
+            if (printer.equals(getString(R.string.hp_deskjet_1115_blank)))
+                blank = true;
+        } else if (printer.equals(getString(R.string.hp_envy_7855)))
+            printerclass = 5;
+
+        return new Pair<>(printerclass, blank);
+    }
+
+
 
     //https://github.com/taehwandev/MediaCodecExample/blob/master/src/net/thdev/mediacodecexample/decoder/AudioDecoderThread.java
     //https://gist.github.com/a-m-s/1991ab18fbcb0fcc2cf9
@@ -348,7 +366,7 @@ public class MainActivity extends AppCompatActivity {
                     audioFile = new File("/storage/self/primary/" + path[1]);
                     //tv.setText(audioFile.toString());
                     ExecutorService es = Executors.newFixedThreadPool(1);
-                    es.execute(new ProcessAudio(ProcessAudio.FILE_PROCESS, spinn.getSelectedItemPosition()));
+                    es.execute(new ProcessAudio(ProcessAudio.FILE_PROCESS, (String) spinn.getSelectedItem()));
                 }
             }
             else if(requestCode == RECORD_REQUEST_CODE){
@@ -380,9 +398,9 @@ public class MainActivity extends AppCompatActivity {
         final static int FILE_PROCESS = 1;
         final static int RECORD_PROCESS = 2;
         int type;
-        int printer;
+        String printer;
 
-        ProcessAudio(int type, int printer){
+        ProcessAudio(int type, String printer){
             this.type = type;
             this.printer = printer;
             new Thread(this);

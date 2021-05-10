@@ -5,7 +5,7 @@
 // File: envelope.cpp
 //
 // MATLAB Coder version            : 5.0
-// C/C++ source code generated on  : 13-Oct-2020 20:04:12
+// C/C++ source code generated on  : 07-May-2021 23:24:34
 //
 
 // Include Files
@@ -19,20 +19,20 @@
 
 //
 // Arguments    : const double x[529200]
-//                int n
+//                double n
 //                double upperEnv[529200]
 //                double lowerEnv[529200]
 // Return Type  : void
 //
-void b_envelope(const double x[529200], int n, double upperEnv[529200], double
-                lowerEnv[529200])
+void b_envelope(const double x[529200], double n, double upperEnv[529200],
+                double lowerEnv[529200])
 {
   double s;
   int k;
   double xmean;
   int i;
-  int nd2;
   static double b_x[529200];
+  int nd2;
   int n1;
   s = x[0];
   for (k = 0; k < 529199; k++) {
@@ -44,8 +44,9 @@ void b_envelope(const double x[529200], int n, double upperEnv[529200], double
     b_x[i] = x[i] - xmean;
   }
 
-  nd2 = n >> 1;
-  if ((n & 1) == 0) {
+  k = static_cast<int>(n);
+  nd2 = k >> 1;
+  if ((k & 1) == 0) {
     n1 = nd2 - 2;
   } else {
     n1 = nd2 - 1;
@@ -82,20 +83,20 @@ void b_envelope(const double x[529200], int n, double upperEnv[529200], double
 
 //
 // Arguments    : const double x[44100]
-//                int n
+//                double n
 //                double upperEnv[44100]
 //                double lowerEnv[44100]
 // Return Type  : void
 //
-void envelope(const double x[44100], int n, double upperEnv[44100], double
+void envelope(const double x[44100], double n, double upperEnv[44100], double
               lowerEnv[44100])
 {
   double s;
   int k;
   double xmean;
   int i;
-  int nd2;
   static double b_x[44100];
+  int nd2;
   int n1;
   s = x[0];
   for (k = 0; k < 44099; k++) {
@@ -107,8 +108,9 @@ void envelope(const double x[44100], int n, double upperEnv[44100], double
     b_x[i] = x[i] - xmean;
   }
 
-  nd2 = n >> 1;
-  if ((n & 1) == 0) {
+  k = static_cast<int>(n);
+  nd2 = k >> 1;
+  if ((k & 1) == 0) {
     n1 = nd2 - 2;
   } else {
     n1 = nd2 - 1;
