@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">PrinterLeaks</string>
+    <string name="epson_l415_text">Epson L4150</string>
+    <string name="canon_mg2410_text">Canon MG2410</string>
+    <string name="hp_deskjet_1115_text">HP DeskJet 1115 Text</string>
+    <string name="hp_deskjet_1115_blank">HP DeskJet 1115 Blank</string>
+    <string name="hp_envy_7855">HP ENVY 7855</string>
+</resources>
